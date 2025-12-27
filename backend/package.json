@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "create-admin": "node scripts/createAdmin.js"
+    "create-admin": "node scripts/createAdmin.js",
+    "add-fastfood": "node scripts/addFastFood.js",
+    "update-images": "node scripts/updateFoodImages.js"
   },
   "keywords": [
     "food",

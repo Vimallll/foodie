@@ -38,6 +38,11 @@ const restaurantSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  admin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -45,4 +50,3 @@ const restaurantSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Restaurant', restaurantSchema);
-

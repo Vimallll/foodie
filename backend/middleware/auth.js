@@ -34,3 +34,20 @@ exports.admin = (req, res, next) => {
   }
 };
 
+// Restaurant Admin only
+exports.restaurantAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'restaurant_admin' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Restaurant admin only.' });
+  }
+};
+
+// Delivery person only
+exports.delivery = (req, res, next) => {
+  if (req.user && (req.user.role === 'delivery' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. Delivery person only.' });
+  }
+};

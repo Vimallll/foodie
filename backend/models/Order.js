@@ -38,9 +38,19 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  restaurant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant',
+    default: null,
+  },
+  deliveryPerson: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   status: {
     type: String,
-    enum: ['pending', 'preparing', 'delivered', 'cancelled'],
+    enum: ['pending', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'],
     default: 'pending',
   },
   paymentMethod: {
@@ -63,4 +73,3 @@ const orderSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Order', orderSchema);
-

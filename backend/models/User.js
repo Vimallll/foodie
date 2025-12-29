@@ -26,8 +26,17 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'restaurant_admin', 'delivery'],
     default: 'user',
+  },
+  restaurant: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Restaurant',
+    default: null,
+  },
+  isAvailable: {
+    type: Boolean,
+    default: true,
   },
   phone: {
     type: String,
@@ -73,4 +82,3 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
-

@@ -15,13 +15,17 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Cart is empty' });
     }
 
-    // Prepare order items
+    // Prepare order items and get restaurant from first food item
     const orderItems = cart.items.map((item) => ({
       food: item.food._id,
       name: item.food.name,
       quantity: item.quantity,
       price: item.price,
     }));
+
+    // Get restaurant from the first food item (assuming all items are from same restaurant)
+    const firstFood = await Food.findById(cart.items[0].food._id);
+    const restaurantId = firstFood ? firstFood.restaurant : null;
 
     // Create order
     const order = await Order.create({
@@ -30,6 +34,7 @@ exports.createOrder = async (req, res) => {
       deliveryAddress,
       totalAmount: cart.total,
       paymentMethod: paymentMethod || 'cash',
+      restaurant: restaurantId,
     });
 
     // Clear cart
@@ -79,8 +84,15 @@ exports.getOrder = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Check if user owns the order or is admin
-    if (order.user.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Check if user owns the order, is admin, restaurant admin, or delivery person
+    const isOwner = order.user.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+    const isRestaurantAdmin = req.user.role === 'restaurant_admin' && 
+      order.restaurant && order.restaurant.toString() === req.user.restaurant?.toString();
+    const isDeliveryPerson = req.user.role === 'delivery' && 
+      order.deliveryPerson && order.deliveryPerson.toString() === req.user.id.toString();
+
+    if (!isOwner && !isAdmin && !isRestaurantAdmin && !isDeliveryPerson) {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
@@ -100,6 +112,8 @@ exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
       .populate('user', 'name email')
+      .populate('restaurant', 'name')
+      .populate('deliveryPerson', 'name email')
       .populate('items.food')
       .sort({ createdAt: -1 });
 
@@ -142,4 +156,3 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-

@@ -1,11 +1,6 @@
 
 
-### Admin Features
-- Admin dashboard with analytics
-- Manage foods (CRUD operations)
-- Manage categories and restaurants
-- View and update order status
-- View all users
+
 
 ## Tech Stack
 

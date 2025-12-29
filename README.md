@@ -1,9 +1,3 @@
-# Foodie - Food Delivery Website (MERN Stack)
-
-A complete food delivery website built with MongoDB, Express, React, and Node.js. This project includes both frontend and backend with full authentication, cart management, order processing, and admin panel.
-
-## Features
-
 ### User Features
 - User registration and login with JWT authentication
 - Browse foods with search and filter functionality

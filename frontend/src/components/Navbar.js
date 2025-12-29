@@ -45,6 +45,16 @@ const Navbar = () => {
                   Admin
                 </Link>
               )}
+              {user?.role === 'restaurant_admin' && (
+                <Link to="/restaurant-admin/dashboard" className="navbar-link">
+                  Restaurant Dashboard
+                </Link>
+              )}
+              {user?.role === 'delivery' && (
+                <Link to="/delivery/dashboard" className="navbar-link">
+                  Delivery
+                </Link>
+              )}
               <button onClick={handleLogout} className="navbar-button">
                 Logout
               </button>
@@ -66,4 +76,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-

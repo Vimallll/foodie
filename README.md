@@ -1,10 +1,4 @@
-### User Features
-- User registration and login with JWT authentication
-- Browse foods with search and filter functionality
-- Add items to cart and manage quantities
-- Place orders with delivery address
-- View order history and track order status
-- Update user profile and save delivery address
+
 
 ### Admin Features
 - Admin dashboard with analytics

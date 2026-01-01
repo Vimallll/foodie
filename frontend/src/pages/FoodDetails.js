@@ -77,7 +77,7 @@ const FoodDetails = () => {
 
             <div className="food-meta">
               <div className="meta-item">
-                <strong>Price:</strong> <span className="price">${food.price}</span>
+                <strong>Price:</strong> <span className="price">₹{food.price}</span>
               </div>
               <div className="meta-item">
                 <strong>Category:</strong> {food.category?.name}
@@ -108,7 +108,7 @@ const FoodDetails = () => {
               </div>
 
               <button onClick={handleAddToCart} className="add-to-cart-button">
-                Add to Cart - ${(food.price * quantity).toFixed(2)}
+                Add to Cart - ₹{(food.price * quantity).toFixed(2)}
               </button>
             </div>
           </div>

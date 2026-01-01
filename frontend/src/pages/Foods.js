@@ -71,7 +71,8 @@ const Foods = () => {
         <h1>All Foods</h1>
 
         <div className="filters">
-          <div className="filter-group">
+          <div className="filter-group search-group">
+            <span className="search-icon">🔍</span>
             <input
               type="text"
               placeholder="Search foods..."
@@ -129,7 +130,7 @@ const Foods = () => {
                   <h3>{food.name}</h3>
                   <p className="food-description">{food.description}</p>
                   <div className="food-footer">
-                    <span className="food-price">${food.price}</span>
+                    <span className="food-price">₹{food.price}</span>
                     <span className="food-restaurant">{food.restaurant?.name}</span>
                   </div>
                 </div>

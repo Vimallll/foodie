@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "create-admin": "node scripts/createAdmin.js",
     "add-fastfood": "node scripts/addFastFood.js",
+    "seed-data": "node scripts/seedData.js",
     "update-images": "node scripts/updateFoodImages.js",
     "assign-restaurant-admin": "node scripts/assignRestaurantAdmin.js",
     "create-delivery": "node scripts/createDeliveryPerson.js"

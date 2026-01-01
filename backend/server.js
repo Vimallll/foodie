@@ -19,11 +19,6 @@ if (!process.env.JWT_SECRET) {
   process.exit(1);
 }
 
-// ✅ FIXED: Use HF_API_KEY instead of GEMINI_API_KEY
-if (!process.env.HF_API_KEY) {
-  console.warn("⚠️ WARNING: HF_API_KEY not found (chatbot will not work)");
-}
-
 console.log("✅ Environment variables loaded");
 
 const app = express();

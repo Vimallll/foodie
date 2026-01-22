@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './OrderDetails.css';
@@ -9,11 +9,7 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOrder();
-  }, [id]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const response = await api.get(`/orders/${id}`);
       setOrder(response.data.order);
@@ -22,7 +18,11 @@ const OrderDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchOrder();
+  }, [fetchOrder]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -131,6 +131,35 @@ const OrderDetails = () => {
                   {order.deliveryAddress.zipCode}
                 </p>
               </div>
+
+              {order.deliveryPerson && (
+                <div className="delivery-person-info" style={{ 
+                  marginTop: '1.5rem', 
+                  paddingTop: '1.5rem', 
+                  borderTop: '1px solid #eee' 
+                }}>
+                  <h3>🚚 Delivery Partner</h3>
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <div className="info-row" style={{ borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: '500', color: '#666' }}>Name:</span>
+                      <span style={{ fontWeight: '600', color: '#333' }}>
+                        {order.deliveryPerson.name || order.deliveryPerson.fullName || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="info-row" style={{ paddingTop: '0.5rem' }}>
+                      <span style={{ fontWeight: '500', color: '#666' }}>Phone:</span>
+                      <span style={{ fontWeight: '600', color: '#333' }}>
+                        <a 
+                          href={`tel:${order.deliveryPerson.phone || order.deliveryPerson.phoneNumber}`}
+                          style={{ color: '#ff6b35', textDecoration: 'none' }}
+                        >
+                          {order.deliveryPerson.phone || order.deliveryPerson.phoneNumber || 'N/A'}
+                        </a>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

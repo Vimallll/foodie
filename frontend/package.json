@@ -10,6 +10,8 @@
     "react-toastify": "^9.1.3"
   },
   "scripts": {
+    "prestart": "node scripts/inject-env.js",
+    "prebuild": "node scripts/inject-env.js",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

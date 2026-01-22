@@ -10,7 +10,7 @@ const DeliveryRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/delivery/login" />;
   }
 
   if (user?.role !== 'delivery' && user?.role !== 'admin') {

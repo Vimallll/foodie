@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Google Maps API Key</title>
+</head>
+<body>
+    <h1>Google Maps API Key Test</h1>
+    <div id="result"></div>
+    
+    <script>
+        // Load env-config.js
+        const script = document.createElement('script');
+        script.src = './env-config.js';
+        script.onload = function() {
+            const result = document.getElementById('result');
+            
+            if (window.ENV && window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY) {
+                const key = window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY;
+                result.innerHTML = `
+                    <h2 style="color: green;">✅ API Key Found!</h2>
+                    <p><strong>Key:</strong> ${key.substring(0, 15)}...</p>
+                    <p>Full key: ${key}</p>
+                `;
+                
+                // Try to load Google Maps
+                const mapsScript = document.createElement('script');
+                mapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places,geometry&callback=initMap`;
+                mapsScript.onerror = function() {
+                    result.innerHTML += '<h3 style="color: red;">❌ Failed to load Google Maps API</h3>';
+                };
+                document.head.appendChild(mapsScript);
+            } else {
+                result.innerHTML = `
+                    <h2 style="color: red;">❌ API Key NOT Found</h2>
+                    <p>window.ENV: ${JSON.stringify(window.ENV, null, 2)}</p>
+                `;
+            }
+        };
+        script.onerror = function() {
+            document.getElementById('result').innerHTML = '<h2 style="color: red;">❌ env-config.js not found!</h2>';
+        };
+        document.head.appendChild(script);
+        
+        function initMap() {
+            document.getElementById('result').innerHTML += '<h3 style="color: green;">✅ Google Maps loaded successfully!</h3>';
+        }
+    </script>
+</body>
+</html>
+
+
+
+

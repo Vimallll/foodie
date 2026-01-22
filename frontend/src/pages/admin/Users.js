@@ -49,8 +49,8 @@ const Users = () => {
                   <td>
                     <span
                       style={{
-                        color: user.role === 'admin' ? '#ff6b35' : '#666',
-                        fontWeight: user.role === 'admin' ? 'bold' : 'normal',
+                        color: user.role === 'manager' ? '#ff6b35' : '#666',
+                        fontWeight: user.role === 'manager' ? 'bold' : 'normal',
                       }}
                     >
                       {user.role.charAt(0).toUpperCase() + user.role.slice(1)}

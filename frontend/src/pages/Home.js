@@ -11,13 +11,10 @@ const Home = () => {
   const [categories, setCategories] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [availableLocations, setAvailableLocations] = useState([]);
-  const [searchType, setSearchType] = useState('food'); // 'food' or 'restaurant'
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [favorites, setFavorites] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
   const categoryScrollRef = useRef(null);
   const [searchParams] = useSearchParams();
   const activeCategory = searchParams.get('category');
@@ -29,19 +26,6 @@ const Home = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    // Extract unique cities from restaurants
-    if (restaurants.length > 0) {
-      const cities = [...new Set(restaurants
-        .map(r => r.address?.city)
-        .filter(city => city && city.trim())
-      )].sort();
-      setAvailableLocations(cities);
-      if (cities.length > 0 && !selectedLocation) {
-        setSelectedLocation(cities[0]);
-      }
-    }
-  }, [restaurants]);
 
   useEffect(() => {
     const checkScrollButtons = () => {
@@ -99,16 +83,6 @@ const Home = () => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      if (searchType === 'food') {
-        navigate(`/foods?search=${encodeURIComponent(searchQuery)}`);
-      } else {
-        navigate(`/foods?restaurant=${encodeURIComponent(searchQuery)}`);
-      }
-    }
-  };
 
   const getCategoryEmoji = (categoryName) => {
     const emojiMap = {
@@ -190,6 +164,13 @@ const Home = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/foods?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -211,56 +192,22 @@ const Home = () => {
             </p>
           </div>
 
-          <div className="hero-search-container">
-            <div className="search-tabs">
-              <button
-                className={`search-tab ${searchType === 'food' ? 'active' : ''}`}
-                onClick={() => setSearchType('food')}
-              >
-                <span className="tab-icon">🍔</span>
-                Search Food
-              </button>
-              <button
-                className={`search-tab ${searchType === 'restaurant' ? 'active' : ''}`}
-                onClick={() => setSearchType('restaurant')}
-              >
-                <span className="tab-icon">🏪</span>
-                Search Restaurant
-              </button>
+          {/* Search Bar */}
+          <form className="hero-search-container" onSubmit={handleSearch}>
+            <div className="search-input-wrapper">
+              <span className="search-icon">🔍</span>
+              <input
+                type="text"
+                className="hero-search-input"
+                placeholder="Search for food, restaurants, cuisines..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-
-            <form className="hero-search-form" onSubmit={handleSearch}>
-              <div className="location-selector">
-                <span className="location-icon">📍</span>
-                <select
-                  value={selectedLocation}
-                  onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="location-select"
-                >
-                  {availableLocations.map((city, index) => (
-                    <option key={index} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="search-input-wrapper">
-                <span className="search-icon">🔍</span>
-                <input
-                  type="text"
-                  placeholder={searchType === 'food' ? 'Search for food, dishes...' : 'Search for restaurants...'}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="hero-search-input"
-                />
-              </div>
-
-              <button type="submit" className="search-button">
-                Search
-              </button>
-            </form>
-          </div>
+            <button type="submit" className="search-button">
+              Search
+            </button>
+          </form>
 
           <div className="hero-cta-buttons">
             <Link to="/foods" className="cta-button cta-primary">
@@ -274,16 +221,20 @@ const Home = () => {
 
           <div className="hero-stats">
             <div className="stat-item">
-              <div className="stat-number">100+</div>
+              <div className="stat-number">{restaurants.length}+</div>
               <div className="stat-label">Restaurants</div>
             </div>
             <div className="stat-item">
-              <div className="stat-number">500+</div>
+              <div className="stat-number">{foods.length}+</div>
               <div className="stat-label">Food Items</div>
             </div>
             <div className="stat-item">
               <div className="stat-number">30min</div>
               <div className="stat-label">Avg Delivery</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number">24/7</div>
+              <div className="stat-label">Available</div>
             </div>
           </div>
         </div>

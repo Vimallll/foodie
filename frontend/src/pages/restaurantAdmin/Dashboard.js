@@ -38,7 +38,7 @@ const RestaurantAdminDashboard = () => {
         {restaurant && (
           <div className="restaurant-info">
             <h2>{restaurant.name}</h2>
-            <p>{restaurant.description}</p>
+            {restaurant.description && <p>{restaurant.description}</p>}
           </div>
         )}
 
@@ -55,27 +55,27 @@ const RestaurantAdminDashboard = () => {
           <div className="stats-grid">
             <div className="stat-card">
               <h3>Total Foods</h3>
-              <p className="stat-number">{stats.totalFoods}</p>
+              <div className="stat-value">{stats.totalFoods}</div>
             </div>
             <div className="stat-card">
               <h3>Total Orders</h3>
-              <p className="stat-number">{stats.totalOrders}</p>
+              <div className="stat-value">{stats.totalOrders}</div>
             </div>
             <div className="stat-card">
               <h3>Pending Orders</h3>
-              <p className="stat-number">{stats.pendingOrders}</p>
+              <div className="stat-value">{stats.pendingOrders}</div>
             </div>
             <div className="stat-card">
               <h3>Preparing</h3>
-              <p className="stat-number">{stats.preparingOrders}</p>
+              <div className="stat-value">{stats.preparingOrders}</div>
             </div>
             <div className="stat-card">
               <h3>Ready for Delivery</h3>
-              <p className="stat-number">{stats.readyOrders}</p>
+              <div className="stat-value">{stats.readyOrders}</div>
             </div>
             <div className="stat-card">
               <h3>Total Revenue</h3>
-              <p className="stat-number">${stats.totalRevenue.toFixed(2)}</p>
+              <div className="stat-value">${stats.totalRevenue.toFixed(2)}</div>
             </div>
           </div>
         )}

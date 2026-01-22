@@ -8,6 +8,11 @@ const Restaurants = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState(null);
+  const [showAssignManager, setShowAssignManager] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -27,12 +32,26 @@ const Restaurants = () => {
     fetchRestaurants();
   }, []);
 
+  const getManagerName = (admin) => {
+    if (!admin) return null;
+    
+    // If admin is an object with name or email
+    if (typeof admin === 'object' && admin !== null) {
+      return admin.name || admin.email || null;
+    }
+    
+    // If admin is just an ID string, return null (should be populated by backend)
+    return null;
+  };
+
   const fetchRestaurants = async () => {
     try {
       const response = await api.get('/restaurants');
-      setRestaurants(response.data.restaurants);
+      const restaurantsData = response.data.restaurants || [];
+      setRestaurants(restaurantsData);
     } catch (error) {
       console.error('Error fetching restaurants:', error);
+      toast.error('Failed to fetch restaurants');
     } finally {
       setLoading(false);
     }
@@ -104,6 +123,50 @@ const Restaurants = () => {
       } catch (error) {
         toast.error('Failed to delete restaurant');
       }
+    }
+  };
+
+  const handleAssignManager = async (restaurant) => {
+    setSelectedRestaurant(restaurant);
+    setSelectedUserId('');
+    setLoadingUsers(true);
+    setShowAssignManager(true);
+    
+    try {
+      const response = await api.get('/users');
+      // Filter to show users that can be assigned as managers (exclude delivery partners and superAdmin)
+      const assignableUsers = response.data.users.filter(
+        user => user.role !== 'delivery' && user.role !== 'superAdmin'
+      );
+      setUsers(assignableUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+      setShowAssignManager(false);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const handleAssignManagerSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!selectedUserId) {
+      toast.error('Please select a user to assign as manager');
+      return;
+    }
+
+    try {
+      await api.post(`/restaurants/${selectedRestaurant._id}/assign-manager`, {
+        userId: selectedUserId,
+      });
+      toast.success('Manager assigned successfully!');
+      setShowAssignManager(false);
+      setSelectedRestaurant(null);
+      setSelectedUserId('');
+      fetchRestaurants();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to assign manager');
     }
   };
 
@@ -271,6 +334,7 @@ const Restaurants = () => {
                 <th>Phone</th>
                 <th>City</th>
                 <th>Delivery Time</th>
+                <th>Manager</th>
                 <th>Active</th>
                 <th>Actions</th>
               </tr>
@@ -282,6 +346,22 @@ const Restaurants = () => {
                   <td>{restaurant.phone || 'N/A'}</td>
                   <td>{restaurant.address?.city || 'N/A'}</td>
                   <td>{restaurant.deliveryTime} min</td>
+                  <td>
+                    {(() => {
+                      const managerName = getManagerName(restaurant.admin);
+                      if (managerName) {
+                        return (
+                          <span style={{ color: '#28a745', fontWeight: '500' }}>
+                            {managerName}
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span style={{ color: '#999', fontStyle: 'italic' }}>Not assigned</span>
+                        );
+                      }
+                    })()}
+                  </td>
                   <td>{restaurant.isActive ? 'Yes' : 'No'}</td>
                   <td>
                     <div className="admin-actions">
@@ -290,6 +370,13 @@ const Restaurants = () => {
                         onClick={() => handleEdit(restaurant)}
                       >
                         Edit
+                      </button>
+                      <button
+                        className="admin-button"
+                        style={{ backgroundColor: '#ff6b35', margin: '0 4px' }}
+                        onClick={() => handleAssignManager(restaurant)}
+                      >
+                        Assign Manager
                       </button>
                       <button
                         className="admin-button btn-delete"
@@ -304,6 +391,74 @@ const Restaurants = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Assign Manager Modal */}
+        {showAssignManager && (
+          <div className="modal-overlay" onClick={() => setShowAssignManager(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Assign Manager to {selectedRestaurant?.name}</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setShowAssignManager(false);
+                    setSelectedRestaurant(null);
+                    setSelectedUserId('');
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+              <form onSubmit={handleAssignManagerSubmit}>
+                <div className="form-group">
+                  <label>Select User</label>
+                  {loadingUsers ? (
+                    <div>Loading users...</div>
+                  ) : (
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #ddd',
+                        fontSize: '14px',
+                      }}
+                    >
+                      <option value="">-- Select a user --</option>
+                      {users.map((user) => (
+                        <option key={user._id || user.id} value={user._id || user.id}>
+                          {user.name} ({user.email}) {user.role === 'manager' ? '- Current Manager' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <small style={{ color: '#666', display: 'block', marginTop: '4px' }}>
+                    Note: Selected user will be assigned the manager role for this restaurant.
+                  </small>
+                </div>
+                <div className="form-actions" style={{ marginTop: '20px' }}>
+                  <button type="submit" className="btn-submit">
+                    Assign Manager
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    onClick={() => {
+                      setShowAssignManager(false);
+                      setSelectedRestaurant(null);
+                      setSelectedUserId('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

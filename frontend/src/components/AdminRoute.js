@@ -13,7 +13,8 @@ const AdminRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  if (user?.role !== 'admin') {
+  // Only superAdmin can access admin dashboard routes
+  if (user?.role !== 'superAdmin') {
     return <Navigate to="/" />;
   }
 

@@ -12,7 +12,13 @@
     "seed-data": "node scripts/seedData.js",
     "update-images": "node scripts/updateFoodImages.js",
     "assign-restaurant-admin": "node scripts/assignRestaurantAdmin.js",
-    "create-delivery": "node scripts/createDeliveryPerson.js"
+    "create-delivery": "node scripts/createDeliveryPerson.js",
+    "create-manager": "node scripts/createManager.js",
+    "assign-manager": "node scripts/assignManager.js",
+    "activate-delivery": "node scripts/activateDelivery.js",
+    "update-admin": "node scripts/updateAdminToSuperAdmin.js",
+    "fix-email-index": "node scripts/fixEmailIndex.js",
+    "check-user-role": "node scripts/checkUserRole.js"
   },
   "keywords": [
     "food",
@@ -32,7 +38,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.5.0",
     "multer": "^2.0.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.12",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

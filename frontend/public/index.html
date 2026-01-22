@@ -7,6 +7,147 @@
     <meta name="description" content="Food Delivery App" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>Foodie - Food Delivery</title>
+    <!-- Load env-config.js first (synchronously) -->
+    <script src="%PUBLIC_URL%/env-config.js"></script>
+    <!-- Google Maps API - Loaded using environment variable -->
+    <script>
+      (function() {
+        // Function to load Google Maps API
+        function loadGoogleMapsAPI() {
+          // Get API key from env-config.js (injected by inject-env.js script)
+          let apiKey = null;
+          
+          try {
+            if (window.ENV && window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY) {
+              const rawKey = window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY;
+              apiKey = String(rawKey).trim();
+              
+              // Validate it's a real API key (starts with AIza and is long enough)
+              if (apiKey && 
+                  apiKey.length > 20 && 
+                  apiKey.startsWith('AIza') &&
+                  apiKey !== '%REACT_APP_GOOGLE_MAPS_API_KEY%' && 
+                  apiKey !== 'YOUR_GOOGLE_MAPS_API_KEY') {
+                // Valid key - keep it
+              } else {
+                apiKey = null;
+              }
+            }
+          } catch (e) {
+            console.error('Error reading API key in loadGoogleMapsAPI:', e);
+            apiKey = null;
+          }
+          
+          if (!apiKey) {
+            console.warn('⚠️ Google Maps API key not configured. Map features will be disabled.');
+            console.warn('   To enable: Add REACT_APP_GOOGLE_MAPS_API_KEY to frontend/.env file');
+            window.googleMapsLoadError = 'API_KEY_MISSING';
+            return;
+          }
+          
+          console.log('🗺️ Loading Google Maps API with key:', apiKey.substring(0, 10) + '...');
+          
+          // Check if Google Maps is already loaded
+          if (window.google && window.google.maps) {
+            console.log('✅ Google Maps API already loaded');
+            return;
+          }
+          
+          // Load Google Maps API
+          const script = document.createElement('script');
+          script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geometry`;
+          script.async = true;
+          script.defer = true;
+          
+          script.onerror = function() {
+            console.error('❌ Failed to load Google Maps API. Error details:');
+            console.error('   - Check if API key is valid');
+            console.error('   - Check if required APIs are enabled in Google Cloud Console');
+            console.error('   - Check browser console for more details');
+            window.googleMapsLoadError = true;
+          };
+          
+          script.onload = function() {
+            if (window.google && window.google.maps) {
+              console.log('✅ Google Maps API loaded successfully!');
+              window.googleMapsLoaded = true;
+            } else {
+              console.error('❌ Google Maps script loaded but window.google.maps is undefined');
+              window.googleMapsLoadError = true;
+            }
+          };
+          
+          document.head.appendChild(script);
+        }
+        
+        // Initialize Google Maps loading
+        // env-config.js is loaded synchronously above, so window.ENV should be available
+        function initGoogleMaps() {
+          // Function to get API key from window.ENV
+          function getApiKey() {
+            try {
+              if (window.ENV && window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY) {
+                const key = String(window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY).trim();
+                // Check if it's a valid key (starts with AIza and is long enough)
+                if (key && 
+                    key.length > 20 && 
+                    key.startsWith('AIza') &&
+                    key !== '%REACT_APP_GOOGLE_MAPS_API_KEY%' && 
+                    key !== 'YOUR_GOOGLE_MAPS_API_KEY' && 
+                    key !== '') {
+                  return key;
+                }
+              }
+            } catch (e) {
+              console.error('Error reading API key:', e);
+            }
+            return null;
+          }
+          
+          // Try to get API key immediately
+          let apiKey = getApiKey();
+          
+          if (apiKey) {
+            // API key found, load Google Maps immediately
+            loadGoogleMapsAPI();
+          } else {
+            // env-config.js might not have executed yet, wait a bit
+            let attempts = 0;
+            const maxAttempts = 10; // 0.5 seconds max wait
+            const checkInterval = setInterval(function() {
+              attempts++;
+              apiKey = getApiKey();
+              
+              if (apiKey) {
+                clearInterval(checkInterval);
+                loadGoogleMapsAPI();
+              } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                // Debug info
+                console.log('Debug - window.ENV:', window.ENV);
+                console.log('Debug - key value:', window.ENV?.REACT_APP_GOOGLE_MAPS_API_KEY);
+                console.log('Debug - key type:', typeof window.ENV?.REACT_APP_GOOGLE_MAPS_API_KEY);
+                
+                // Try one more time with direct access
+                const directKey = window.ENV?.REACT_APP_GOOGLE_MAPS_API_KEY;
+                if (directKey && String(directKey).trim().length > 20 && String(directKey).startsWith('AIza')) {
+                  // Found it! Load immediately
+                  loadGoogleMapsAPI();
+                } else {
+                  console.error('❌ Could not find valid Google Maps API key in window.ENV');
+                  console.error('   Expected: window.ENV.REACT_APP_GOOGLE_MAPS_API_KEY (string starting with "AIza")');
+                  console.error('   Actual:', window.ENV);
+                  window.googleMapsLoadError = 'API_KEY_MISSING';
+                }
+              }
+            }, 50);
+          }
+        }
+        
+        // Run immediately - env-config.js should already be loaded above
+        initGoogleMaps();
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

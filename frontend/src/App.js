@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Components
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import PrivateRoute from "./components/PrivateRoute";
 import AdminRoute from "./components/AdminRoute";
 import RestaurantAdminRoute from "./components/RestaurantAdminRoute";
@@ -15,6 +16,10 @@ import ChatbotPopup from "./components/chatbot/ChatbotPopup";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import DeliveryLogin from "./pages/DeliveryLogin";
+import DeliverySignup from "./pages/DeliverySignup";
+import VerifyOTP from "./pages/VerifyOTP";
+import VerifyEmail from "./pages/VerifyEmail";
 import Foods from "./pages/Foods";
 import FoodDetails from "./pages/FoodDetails";
 import Cart from "./pages/Cart";
@@ -29,25 +34,51 @@ import AdminOrders from "./pages/admin/Orders";
 import AdminUsers from "./pages/admin/Users";
 import AdminCategories from "./pages/admin/Categories";
 import AdminRestaurants from "./pages/admin/Restaurants";
+import AdminDeliveryPartners from "./pages/admin/DeliveryPartners";
 
 import RestaurantAdminDashboard from "./pages/restaurantAdmin/Dashboard";
 import RestaurantAdminFoods from "./pages/restaurantAdmin/Foods";
 import RestaurantAdminOrders from "./pages/restaurantAdmin/Orders";
 
 import DeliveryDashboard from "./pages/delivery/Dashboard";
+import DeliveryProfile from "./pages/delivery/Profile";
+
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import RefundPolicy from "./pages/RefundPolicy";
+import FAQ from "./pages/FAQ";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import Careers from "./pages/Careers";
+import Blog from "./pages/Blog";
 
 function App() {
   return (
     <Router>
-      <div className="App">
+      <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Navbar />
 
+        <main style={{ flex: 1 }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/delivery/login" element={<DeliveryLogin />} />
+          <Route path="/delivery/signup" element={<DeliverySignup />} />
+          <Route path="/delivery/verify-otp" element={<VerifyOTP />} />
+          <Route path="/delivery/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/foods" element={<Foods />} />
           <Route path="/foods/:id" element={<FoodDetails />} />
+
+          {/* Footer Pages */}
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/refund" element={<RefundPolicy />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/blog" element={<Blog />} />
 
           <Route
             path="/cart"
@@ -149,6 +180,15 @@ function App() {
             }
           />
 
+          <Route
+            path="/admin/delivery-partners"
+            element={
+              <AdminRoute>
+                <AdminDeliveryPartners />
+              </AdminRoute>
+            }
+          />
+
           {/* Restaurant Admin Routes */}
           <Route
             path="/restaurant-admin/dashboard"
@@ -186,7 +226,18 @@ function App() {
               </DeliveryRoute>
             }
           />
+          <Route
+            path="/delivery/profile"
+            element={
+              <DeliveryRoute>
+                <DeliveryProfile />
+              </DeliveryRoute>
+            }
+          />
         </Routes>
+        </main>
+
+        <Footer />
 
         {/* ✅ CHATBOT (GLOBAL FLOATING BUTTON) */}
         <ChatbotPopup />

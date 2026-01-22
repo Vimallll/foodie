@@ -15,9 +15,9 @@ const createAdmin = async () => {
     const existingAdmin = await User.findOne({ email: adminEmail });
     if (existingAdmin) {
       console.log('Admin user already exists. Updating role...');
-      existingAdmin.role = 'admin';
+      existingAdmin.role = 'superAdmin';
       await existingAdmin.save();
-      console.log('Admin role updated successfully!');
+      console.log('Admin role updated to superAdmin successfully!');
       process.exit(0);
     }
 
@@ -26,7 +26,7 @@ const createAdmin = async () => {
       name: adminName,
       email: adminEmail,
       password: adminPassword,
-      role: 'admin',
+      role: 'superAdmin',
     });
 
     console.log('Admin user created successfully!');

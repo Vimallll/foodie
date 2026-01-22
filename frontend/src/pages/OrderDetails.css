@@ -120,6 +120,16 @@
   border-top: 1px solid #eee;
 }
 
+.delivery-person-info h3 {
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.delivery-person-info a:hover {
+  text-decoration: underline;
+}
+
 .delivery-address h3 {
   margin-bottom: 0.5rem;
   color: #333;

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import LocationPicker from '../components/LocationPicker';
 import './Profile.css';
 
 const Profile = () => {
@@ -15,6 +17,8 @@ const Profile = () => {
       city: user?.address?.city || '',
       state: user?.address?.state || '',
       zipCode: user?.address?.zipCode || '',
+      latitude: user?.address?.latitude || null,
+      longitude: user?.address?.longitude || null,
     },
   });
 
@@ -28,6 +32,8 @@ const Profile = () => {
           city: user.address?.city || '',
           state: user.address?.state || '',
           zipCode: user.address?.zipCode || '',
+          latitude: user.address?.latitude || null,
+          longitude: user.address?.longitude || null,
         },
       });
     }
@@ -52,6 +58,20 @@ const Profile = () => {
     }
   };
 
+  const handleLocationSelect = (locationData) => {
+    setFormData({
+      ...formData,
+      address: {
+        street: locationData.street || formData.address.street,
+        city: locationData.city || formData.address.city,
+        state: locationData.state || formData.address.state,
+        zipCode: locationData.zipCode || formData.address.zipCode,
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+      },
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -71,6 +91,17 @@ const Profile = () => {
     <div className="profile-page">
       <div className="container">
         <h1>My Profile</h1>
+
+        {/* Quick Actions */}
+        <div className="profile-quick-actions">
+          <Link to="/orders" className="quick-action-btn">
+            <span className="action-icon">📦</span>
+            <div>
+              <strong>My Orders</strong>
+              <p>View order history</p>
+            </div>
+          </Link>
+        </div>
 
         <div className="profile-card">
           <h2>Personal Information</h2>
@@ -109,6 +140,18 @@ const Profile = () => {
 
             <h3>Delivery Address</h3>
 
+            {/* Google Maps Location Picker */}
+            <LocationPicker
+              onLocationSelect={handleLocationSelect}
+              initialLocation={
+                formData.address.latitude && formData.address.longitude
+                  ? { latitude: formData.address.latitude, longitude: formData.address.longitude }
+                  : null
+              }
+              height="350px"
+              label="📍 Select Your Delivery Location on Map"
+            />
+
             <div className="form-group">
               <label>Street Address</label>
               <input
@@ -116,6 +159,7 @@ const Profile = () => {
                 name="address.street"
                 value={formData.address.street}
                 onChange={handleChange}
+                placeholder="Or enter manually"
               />
             </div>
 
@@ -127,6 +171,7 @@ const Profile = () => {
                   name="address.city"
                   value={formData.address.city}
                   onChange={handleChange}
+                  placeholder="Or enter manually"
                 />
               </div>
               <div className="form-group">
@@ -136,6 +181,7 @@ const Profile = () => {
                   name="address.state"
                   value={formData.address.state}
                   onChange={handleChange}
+                  placeholder="Or enter manually"
                 />
               </div>
             </div>
@@ -147,6 +193,7 @@ const Profile = () => {
                 name="address.zipCode"
                 value={formData.address.zipCode}
                 onChange={handleChange}
+                placeholder="Or enter manually"
               />
             </div>
 

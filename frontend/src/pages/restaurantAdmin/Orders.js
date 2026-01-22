@@ -14,11 +14,33 @@ const RestaurantAdminOrders = () => {
   const fetchOrders = async () => {
     try {
       const response = await api.get('/restaurant-admin/orders');
-      setOrders(response.data.orders);
+      setOrders(response.data.orders || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      toast.error(error.response?.data?.message || 'Error fetching orders');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const acceptOrder = async (orderId) => {
+    try {
+      await api.post(`/restaurant-admin/orders/${orderId}/accept`);
+      toast.success('Order accepted successfully');
+      fetchOrders();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error accepting order');
+    }
+  };
+
+  const rejectOrder = async (orderId) => {
+    const reason = window.prompt('Enter rejection reason (optional):');
+    try {
+      await api.post(`/restaurant-admin/orders/${orderId}/reject`, { reason: reason || '' });
+      toast.success('Order rejected');
+      fetchOrders();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error rejecting order');
     }
   };
 
@@ -34,17 +56,20 @@ const RestaurantAdminOrders = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
+      case 'PLACED':
         return '#ff9800';
-      case 'preparing':
+      case 'ACCEPTED':
         return '#2196f3';
-      case 'ready':
+      case 'PREPARING':
+        return '#2196f3';
+      case 'READY_FOR_PICKUP':
         return '#4caf50';
-      case 'out_for_delivery':
+      case 'OUT_FOR_DELIVERY':
         return '#9c27b0';
-      case 'delivered':
+      case 'DELIVERED':
         return '#8bc34a';
-      case 'cancelled':
+      case 'REJECTED':
+      case 'CANCELLED':
         return '#f44336';
       default:
         return '#666';
@@ -59,73 +84,90 @@ const RestaurantAdminOrders = () => {
     <div className="admin-page">
       <div className="container">
         <h1>Restaurant Orders</h1>
-        <div className="admin-table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Delivery Person</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order._id}>
-                  <td>{order._id.slice(-6)}</td>
-                  <td>
-                    <div>{order.user?.name}</div>
-                    <small>{order.user?.email}</small>
-                  </td>
-                  <td>
-                    {order.items.map((item, idx) => (
-                      <div key={idx}>
-                        {item.name} x{item.quantity}
-                      </div>
-                    ))}
-                  </td>
-                  <td>${order.totalAmount.toFixed(2)}</td>
-                  <td>
-                    <span
-                      className="status-badge"
-                      style={{ backgroundColor: getStatusColor(order.status) }}
-                    >
-                      {order.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    {order.deliveryPerson ? order.deliveryPerson.name : 'Not assigned'}
-                  </td>
-                  <td>
-                    {order.status === 'pending' && (
-                      <button
-                        onClick={() => updateStatus(order._id, 'preparing')}
-                        className="btn-primary"
-                      >
-                        Start Preparing
-                      </button>
-                    )}
-                    {order.status === 'preparing' && (
-                      <button
-                        onClick={() => updateStatus(order._id, 'ready')}
-                        className="btn-primary"
-                      >
-                        Mark Ready
-                      </button>
-                    )}
-                  </td>
+        {orders.length === 0 ? (
+          <div className="no-orders">
+            <p>No orders found</p>
+          </div>
+        ) : (
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Delivery Person</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order._id}>
+                    <td>#{order._id.toString().slice(-6)}</td>
+                    <td>
+                      <div>{order.user?.name}</div>
+                      <small>{order.user?.email}</small>
+                    </td>
+                    <td>
+                      {order.items?.map((item, idx) => (
+                        <div key={idx}>
+                          {item.food?.name || item.name} x{item.quantity}
+                        </div>
+                      ))}
+                    </td>
+                    <td>₹{order.totalAmount?.toFixed(2) || '0.00'}</td>
+                    <td>
+                      <span
+                        className="status-badge"
+                        style={{ backgroundColor: getStatusColor(order.status) }}
+                      >
+                        {order.status?.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td>
+                      {order.deliveryPerson ? order.deliveryPerson.name : 'Not assigned'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {order.status === 'PLACED' && (
+                          <>
+                            <button
+                              onClick={() => acceptOrder(order._id)}
+                              className="btn-primary"
+                              style={{ backgroundColor: '#4caf50' }}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => rejectOrder(order._id)}
+                              className="btn-primary"
+                              style={{ backgroundColor: '#f44336' }}
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+                        {(order.status === 'PREPARING' || order.status?.toUpperCase() === 'PREPARING') && (
+                          <button
+                            onClick={() => updateStatus(order._id, 'READY_FOR_PICKUP')}
+                            className="btn-primary"
+                          >
+                            Mark Ready
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default RestaurantAdminOrders;
-

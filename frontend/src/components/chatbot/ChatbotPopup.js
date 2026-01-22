@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./ChatbotPopup.css";
 import { sendChatMessage } from "../../services/api";
 
@@ -6,15 +6,40 @@ const ChatbotPopup = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState(() => {
+    // Generate or retrieve session ID
+    let id = localStorage.getItem("chatbot_session_id");
+    if (!id) {
+      id = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem("chatbot_session_id", id);
+    }
+    return id;
+  });
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
 
   const handleSend = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || isTyping) return;
 
     const userMsg = { sender: "user", text: message };
     setMessages((prev) => [...prev, userMsg]);
+    const userInput = message;
+    setMessage("");
+    setIsTyping(true);
 
     try {
-      const res = await sendChatMessage(message);
+      const res = await sendChatMessage(userInput, sessionId);
+      
+      // Update session ID if provided
+      if (res.data.sessionId && res.data.sessionId !== sessionId) {
+        setSessionId(res.data.sessionId);
+        localStorage.setItem("chatbot_session_id", res.data.sessionId);
+      }
 
       const botMsg = {
         sender: "bot",
@@ -23,13 +48,17 @@ const ChatbotPopup = () => {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (err) {
+      console.error("Chat error:", err);
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: "Server error. Try again later." },
+        { 
+          sender: "bot", 
+          text: err.response?.data?.reply || "I'm having trouble connecting. Please try again in a moment. 😔" 
+        },
       ]);
+    } finally {
+      setIsTyping(false);
     }
-
-    setMessage("");
   };
 
   return (
@@ -89,6 +118,16 @@ const ChatbotPopup = () => {
                 <div className="message-content">{msg.text}</div>
               </div>
             ))}
+            {isTyping && (
+              <div className="chat-message bot">
+                <div className="message-content typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="chatbot-input">
@@ -104,7 +143,7 @@ const ChatbotPopup = () => {
               <button 
                 onClick={handleSend} 
                 className="chatbot-send-btn"
-                disabled={!message.trim()}
+                disabled={!message.trim() || isTyping}
                 aria-label="Send message"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

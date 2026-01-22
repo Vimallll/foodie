@@ -1,9 +1,10 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../services/api';
 import { CartContext } from '../context/CartContext';
 import { AuthContext } from '../context/AuthContext';
+import LocationPicker from '../components/LocationPicker';
 import './Checkout.css';
 
 const Checkout = () => {
@@ -16,8 +17,24 @@ const Checkout = () => {
     city: user?.address?.city || '',
     state: user?.address?.state || '',
     zipCode: user?.address?.zipCode || '',
+    latitude: user?.address?.latitude || null,
+    longitude: user?.address?.longitude || null,
     paymentMethod: 'cash',
   });
+
+  useEffect(() => {
+    if (user?.address) {
+      setFormData(prev => ({
+        ...prev,
+        street: user.address.street || prev.street,
+        city: user.address.city || prev.city,
+        state: user.address.state || prev.state,
+        zipCode: user.address.zipCode || prev.zipCode,
+        latitude: user.address.latitude || prev.latitude,
+        longitude: user.address.longitude || prev.longitude,
+      }));
+    }
+  }, [user]);
 
   const handleChange = (e) => {
     setFormData({
@@ -43,6 +60,8 @@ const Checkout = () => {
           city: formData.city,
           state: formData.state,
           zipCode: formData.zipCode,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         },
         paymentMethod: formData.paymentMethod,
       });
@@ -82,6 +101,28 @@ const Checkout = () => {
           <div className="checkout-form-section">
             <h2>Delivery Address</h2>
             <form onSubmit={handleSubmit}>
+              {/* Google Maps Location Picker */}
+              <LocationPicker
+                onLocationSelect={(locationData) => {
+                  setFormData({
+                    ...formData,
+                    street: locationData.street || formData.street,
+                    city: locationData.city || formData.city,
+                    state: locationData.state || formData.state,
+                    zipCode: locationData.zipCode || formData.zipCode,
+                    latitude: locationData.latitude,
+                    longitude: locationData.longitude,
+                  });
+                }}
+                initialLocation={
+                  formData.latitude && formData.longitude
+                    ? { latitude: formData.latitude, longitude: formData.longitude }
+                    : null
+                }
+                height="350px"
+                label="📍 Select Your Delivery Location on Map"
+              />
+
               <div className="form-group">
                 <label>Street Address</label>
                 <input
@@ -89,6 +130,7 @@ const Checkout = () => {
                   name="street"
                   value={formData.street}
                   onChange={handleChange}
+                  placeholder="Or enter manually"
                   required
                 />
               </div>
@@ -100,6 +142,7 @@ const Checkout = () => {
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
+                    placeholder="Or enter manually"
                     required
                   />
                 </div>
@@ -110,6 +153,7 @@ const Checkout = () => {
                     name="state"
                     value={formData.state}
                     onChange={handleChange}
+                    placeholder="Or enter manually"
                     required
                   />
                 </div>
@@ -121,6 +165,7 @@ const Checkout = () => {
                   name="zipCode"
                   value={formData.zipCode}
                   onChange={handleChange}
+                  placeholder="Or enter manually"
                   required
                 />
               </div>

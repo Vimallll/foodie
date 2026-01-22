@@ -7,26 +7,31 @@ const {
   updateFood,
   deleteFood,
   getMyOrders,
+  acceptOrder,
+  rejectOrder,
   updateOrderStatus,
   getStats,
 } = require('../controllers/restaurantAdminController');
-const { protect, restaurantAdmin } = require('../middleware/auth');
+const { protect, admin, orderAdmin } = require('../middleware/auth');
 
-// Restaurant info
-router.get('/restaurant', protect, restaurantAdmin, getMyRestaurant);
+// Restaurant info (Admin can access all restaurants)
+router.get('/restaurant', protect, admin, getMyRestaurant);
+router.get('/restaurant/:id', protect, admin, getMyRestaurant);
 
-// Foods
-router.get('/foods', protect, restaurantAdmin, getMyFoods);
-router.post('/foods', protect, restaurantAdmin, createFood);
-router.put('/foods/:id', protect, restaurantAdmin, updateFood);
-router.delete('/foods/:id', protect, restaurantAdmin, deleteFood);
+// Foods (Admin can manage all foods)
+router.get('/foods', protect, admin, getMyFoods);
+router.post('/foods', protect, admin, createFood);
+router.put('/foods/:id', protect, admin, updateFood);
+router.delete('/foods/:id', protect, admin, deleteFood);
 
-// Orders
-router.get('/orders', protect, restaurantAdmin, getMyOrders);
-router.put('/orders/:id/status', protect, restaurantAdmin, updateOrderStatus);
+// Orders (Admin can manage all orders from all restaurants)
+router.get('/orders', protect, orderAdmin, getMyOrders);
+router.post('/orders/:id/accept', protect, orderAdmin, acceptOrder);
+router.post('/orders/:id/reject', protect, orderAdmin, rejectOrder);
+router.put('/orders/:id/status', protect, orderAdmin, updateOrderStatus);
 
-// Stats
-router.get('/stats', protect, restaurantAdmin, getStats);
+// Stats (Admin can see all stats)
+router.get('/stats', protect, admin, getStats);
 
 module.exports = router;
 

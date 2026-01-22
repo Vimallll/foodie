@@ -13,7 +13,7 @@ const RestaurantAdminRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  if (user?.role !== 'restaurant_admin' && user?.role !== 'admin') {
+  if (user?.role !== 'manager' && user?.role !== 'superAdmin') {
     return <Navigate to="/" />;
   }
 

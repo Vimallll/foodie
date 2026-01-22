@@ -90,9 +90,69 @@
   cursor: not-allowed;
 }
 
+/* Quick Actions */
+.profile-quick-actions {
+  margin-bottom: 2rem;
+  max-width: 600px;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(252, 128, 25, 0.1);
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(252, 128, 25, 0.2);
+  border-color: rgba(252, 128, 25, 0.3);
+}
+
+.action-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 4px rgba(252, 128, 25, 0.2));
+}
+
+.quick-action-btn strong {
+  display: block;
+  color: #2d3748;
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.quick-action-btn p {
+  color: #718096;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.quick-action-btn:hover strong {
+  background: linear-gradient(135deg, #FC8019 0%, #E85D04 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .quick-action-btn {
+    padding: 1.25rem;
+  }
+
+  .action-icon {
+    font-size: 2rem;
   }
 }
 

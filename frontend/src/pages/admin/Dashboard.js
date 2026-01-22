@@ -36,14 +36,11 @@ const Dashboard = () => {
         <h1>Admin Dashboard</h1>
 
         <div className="admin-nav">
-          <Link to="/admin/foods" className="admin-nav-link">
-            Manage Foods
-          </Link>
-          <Link to="/admin/categories" className="admin-nav-link">
-            Manage Categories
-          </Link>
           <Link to="/admin/restaurants" className="admin-nav-link">
             Manage Restaurants
+          </Link>
+          <Link to="/admin/delivery-partners" className="admin-nav-link">
+            Manage Delivery Partners
           </Link>
           <Link to="/admin/orders" className="admin-nav-link">
             Manage Orders
@@ -51,12 +48,22 @@ const Dashboard = () => {
           <Link to="/admin/users" className="admin-nav-link">
             Manage Users
           </Link>
+          <Link to="/admin/foods" className="admin-nav-link">
+            Manage Foods
+          </Link>
+          <Link to="/admin/categories" className="admin-nav-link">
+            Manage Categories
+          </Link>
         </div>
 
         <div className="stats-grid">
           <div className="stat-card">
             <h3>Total Users</h3>
             <div className="stat-value">{stats.totalUsers}</div>
+          </div>
+          <div className="stat-card">
+            <h3>Delivery Partners</h3>
+            <div className="stat-value">{stats.totalDeliveryPartners || 0}</div>
           </div>
           <div className="stat-card">
             <h3>Total Foods</h3>

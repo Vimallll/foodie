@@ -19,12 +19,22 @@ const Home = () => {
   const [searchParams] = useSearchParams();
   const activeCategory = searchParams.get('category');
   const navigate = useNavigate();
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
   const { addToCart } = useContext(CartContext);
 
   useEffect(() => {
+    if (isAuthenticated) {
+      if (user?.role === 'superAdmin') {
+        navigate('/admin/dashboard', { replace: true });
+        return;
+      }
+      if (user?.role === 'manager') {
+        navigate('/restaurant-admin/dashboard', { replace: true });
+        return;
+      }
+    }
     fetchData();
-  }, []);
+  }, [isAuthenticated, user, navigate]);
 
 
   useEffect(() => {
@@ -54,10 +64,10 @@ const Home = () => {
     if (categoryScrollRef.current) {
       const scrollAmount = 300;
       const currentScroll = categoryScrollRef.current.scrollLeft;
-      const targetScroll = direction === 'left' 
-        ? currentScroll - scrollAmount 
+      const targetScroll = direction === 'left'
+        ? currentScroll - scrollAmount
         : currentScroll + scrollAmount;
-      
+
       categoryScrollRef.current.scrollTo({
         left: targetScroll,
         behavior: 'smooth'
@@ -103,7 +113,7 @@ const Home = () => {
       'lunch': '🍱',
       'dinner': '🍽️',
     };
-    
+
     const lowerName = categoryName.toLowerCase();
     for (const [key, emoji] of Object.entries(emojiMap)) {
       if (lowerName.includes(key)) {
@@ -118,19 +128,19 @@ const Home = () => {
     const categoryName = food.category?.name?.toLowerCase() || '';
     const foodName = food.name?.toLowerCase() || '';
     const description = food.description?.toLowerCase() || '';
-    
+
     const vegKeywords = ['veg', 'vegetarian', 'salad', 'fruit', 'vegetable'];
     const nonVegKeywords = ['chicken', 'meat', 'fish', 'pork', 'beef', 'mutton', 'seafood', 'egg'];
-    
+
     const allText = `${categoryName} ${foodName} ${description}`;
-    
+
     if (nonVegKeywords.some(keyword => allText.includes(keyword))) {
       return false;
     }
     if (vegKeywords.some(keyword => allText.includes(keyword))) {
       return true;
     }
-    
+
     // Default to non-veg for safety
     return false;
   };
@@ -180,7 +190,7 @@ const Home = () => {
       <section className="hero">
         <div className="hero-background"></div>
         <div className="hero-overlay"></div>
-        
+
         <div className="hero-content">
           <div className="hero-text">
             <h1 className="hero-title">
@@ -254,7 +264,7 @@ const Home = () => {
               <h2>What's on your mind?</h2>
               <p className="section-subtitle">Browse by category</p>
             </div>
-            
+
             <div className="category-wrapper">
               {showLeftArrow && (
                 <button
@@ -265,9 +275,9 @@ const Home = () => {
                   <span className="scroll-arrow">‹</span>
                 </button>
               )}
-              
-              <div 
-                className="category-grid" 
+
+              <div
+                className="category-grid"
                 ref={categoryScrollRef}
               >
                 {categories.map((category) => {
@@ -364,7 +374,7 @@ const Home = () => {
                       ) : (
                         <div className="food-placeholder">🍽️</div>
                       )}
-                      
+
                       {/* Veg/Non-veg Indicator */}
                       <div className={`veg-indicator ${isVeg ? 'veg' : 'non-veg'}`}>
                         <div className="veg-dot"></div>
@@ -392,9 +402,9 @@ const Home = () => {
                           <span className="rating-value">{rating.toFixed(1)}</span>
                         </div>
                       </div>
-                      
+
                       <p className="food-description">{food.description}</p>
-                      
+
                       <div className="food-meta">
                         <div className="delivery-time">
                           <span className="time-icon">⏱️</span>

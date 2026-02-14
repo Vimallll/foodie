@@ -82,23 +82,25 @@ const Navbar = () => {
 
 
         {/* Desktop Menu */}
-        <div 
+        <div
           ref={mobileMenuRef}
           className={`navbar-menu ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}
         >
-          <Link 
-            to="/foods" 
-            className={`navbar-link ${isActive('/foods') ? 'active' : ''}`}
-          >
-            Foods
-          </Link>
+          {(!user || !['superAdmin', 'manager', 'delivery'].includes(user.role)) && (
+            <Link
+              to="/foods"
+              className={`navbar-link ${isActive('/foods') ? 'active' : ''}`}
+            >
+              Foods
+            </Link>
+          )}
 
           {isAuthenticated ? (
             <>
-              {/* Hide cart for delivery guys */}
-              {user?.role !== 'delivery' && (
-                <Link 
-                  to="/cart" 
+              {/* Hide cart for admins and delivery guys */}
+              {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
+                <Link
+                  to="/cart"
                   className={`navbar-link cart-link ${isActive('/cart') ? 'active' : ''}`}
                 >
                   <span className="cart-icon">🛒</span>
@@ -132,10 +134,10 @@ const Navbar = () => {
                       </div>
                     </div>
                     <div className="dropdown-divider"></div>
-                    {/* Hide profile for delivery guys - they have their own profile */}
-                    {user?.role !== 'delivery' && (
-                      <Link 
-                        to="/profile" 
+                    {/* Hide profile for admins and delivery guys - they have their own profile/dashboard */}
+                    {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
+                      <Link
+                        to="/profile"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -143,10 +145,10 @@ const Navbar = () => {
                         Profile
                       </Link>
                     )}
-                    {/* Hide orders for delivery guys */}
-                    {user?.role !== 'delivery' && (
-                      <Link 
-                        to="/orders" 
+                    {/* Hide orders for admins and delivery guys */}
+                    {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
+                      <Link
+                        to="/orders"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -155,8 +157,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'superAdmin' && (
-                      <Link 
-                        to="/admin/dashboard" 
+                      <Link
+                        to="/admin/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -165,8 +167,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {(user?.role === 'manager' || user?.role === 'superAdmin') && (
-                      <Link 
-                        to="/restaurant-admin/dashboard" 
+                      <Link
+                        to="/restaurant-admin/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -175,8 +177,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'delivery' && (
-                      <Link 
-                        to="/delivery/dashboard" 
+                      <Link
+                        to="/delivery/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -185,8 +187,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'delivery' && (
-                      <Link 
-                        to="/delivery/profile" 
+                      <Link
+                        to="/delivery/profile"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -195,7 +197,7 @@ const Navbar = () => {
                       </Link>
                     )}
                     <div className="dropdown-divider"></div>
-                    <button 
+                    <button
                       className="dropdown-item dropdown-item-danger"
                       onClick={handleLogout}
                     >
@@ -208,14 +210,14 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className={`navbar-link ${isActive('/login') ? 'active' : ''}`}
               >
                 Login
               </Link>
-              <Link 
-                to="/delivery/login" 
+              <Link
+                to="/delivery/login"
                 className={`navbar-link ${isActive('/delivery/login') ? 'active' : ''}`}
               >
                 🚚 Delivery

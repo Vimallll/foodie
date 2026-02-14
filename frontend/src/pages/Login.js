@@ -28,7 +28,15 @@ const Login = () => {
 
     if (result.success) {
       toast.success('Login successful!');
-      navigate('/');
+
+      // Redirect based on role
+      if (result.user?.role === 'superAdmin') {
+        navigate('/admin/dashboard');
+      } else if (result.user?.role === 'manager') {
+        navigate('/restaurant-admin/dashboard');
+      } else {
+        navigate('/');
+      }
     } else {
       toast.error(result.message || 'Login failed');
     }

@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       const { token, user } = response.data;
-      
+
       // Block delivery guys from using regular login
       if (user.role === 'delivery') {
         return {
@@ -66,11 +66,12 @@ export const AuthProvider = ({ children }) => {
           message: 'Delivery partners must use the delivery login page',
         };
       }
-      
+
       sessionStorage.setItem('token', token);
       setUser(user);
       setIsAuthenticated(true);
-      return { success: true };
+      setIsAuthenticated(true);
+      return { success: true, user };
     } catch (error) {
       return {
         success: false,
@@ -89,13 +90,13 @@ export const AuthProvider = ({ children }) => {
         role: 'delivery',
       });
       setIsAuthenticated(true);
-      return { 
+      return {
         success: true,
         warning: warning // Pass warning to be shown as info toast, not error
       };
     } catch (error) {
       const errorData = error.response?.data || {};
-      
+
       // Handle verification required cases
       if (errorData.requiresVerification) {
         return {
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }) => {
           email: errorData.email,
         };
       }
-      
+
       return {
         success: false,
         message: errorData.message || 'Login failed',
@@ -118,23 +119,23 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     try {
       const response = await api.post('/auth/register', { name, email, password });
-      
+
       if (!response.data) {
         return {
           success: false,
           message: 'No response data received',
         };
       }
-      
+
       const { token, user } = response.data;
-      
+
       if (!token) {
         return {
           success: false,
           message: 'No token received from server',
         };
       }
-      
+
       sessionStorage.setItem('token', token);
       setUser(user);
       setIsAuthenticated(true);

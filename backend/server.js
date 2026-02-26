@@ -83,25 +83,25 @@ io.on('connection', (socket) => {
   // Join room based on user role and ID
   socket.on('join-room', (data) => {
     const { userId, role, restaurantId } = data;
-    
+
     // User joins their personal room
     socket.join(`user-${userId}`);
-    
-    // Restaurant admin joins restaurant room
-    if (role === 'restaurant_admin' && restaurantId) {
+
+    // Restaurant admin/manager joins restaurant room
+    if ((role === 'restaurant_admin' || role === 'manager') && restaurantId) {
       socket.join(`restaurant-${restaurantId}`);
     }
-    
+
     // Delivery person joins delivery room
     if (role === 'delivery') {
       socket.join('delivery-partners');
     }
-    
+
     // Super admin joins admin room
     if (role === 'superAdmin' || (role === 'manager')) {
       socket.join('admin');
     }
-    
+
     console.log(`✅ User ${userId} joined rooms`);
   });
 

@@ -63,7 +63,7 @@ const RestaurantAdminDashboard = () => {
             </div>
             <div className="stat-card">
               <h3>Pending Orders</h3>
-              <div className="stat-value">{stats.pendingOrders}</div>
+              <div className="stat-value">{stats.placedOrders}</div>
             </div>
             <div className="stat-card">
               <h3>Preparing</h3>

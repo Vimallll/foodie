@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role !== 'delivery'; // Email not required for delivery partners
     },
     unique: true,
@@ -43,12 +43,12 @@ const userSchema = new mongoose.Schema({
   },
   isAvailable: {
     type: Boolean,
-    default: true,
+    default: false, // Default to false for safety
   },
   status: {
     type: String,
     enum: ['AVAILABLE', 'BUSY', 'OFFLINE', 'ONLINE'],
-    default: 'ONLINE',
+    default: 'OFFLINE', // Default to OFFLINE
   },
   active: {
     type: Boolean,
@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'delivery'; // Phone required for delivery partners
     },
     default: '',
@@ -89,21 +89,21 @@ const userSchema = new mongoose.Schema({
     select: false,
     // CRITICAL: Validator that ALWAYS returns true for null/undefined OR non-delivery users
     validate: {
-      validator: function(value) {
+      validator: function (value) {
         // FIRST: Always allow null, undefined, or empty strings - this handles all edge cases
         // This must be checked FIRST before any other validation
         if (value === null || value === undefined || value === '' || value === 'null' || value === 'undefined') {
           return true; // ALWAYS allow empty/null values - no validation needed
         }
-        
+
         // SECOND: Check role - default to 'user' for new documents
         const userRole = (this && this.role !== undefined && this.role !== null) ? this.role : 'user';
-        
+
         // For non-delivery users, ALWAYS return true (field should not exist anyway)
         if (userRole !== 'delivery') {
           return true; // Always allow - field should not exist for non-delivery users
         }
-        
+
         // THIRD: Only validate for delivery partners when a value is provided
         // Validate enum values
         const validTypes = ['bike', 'cycle', 'scooter'];
@@ -135,7 +135,7 @@ const userSchema = new mongoose.Schema({
   availabilityStatus: {
     type: String,
     enum: ['OFFLINE', 'ONLINE', 'BUSY'],
-    default: 'ONLINE',
+    default: 'OFFLINE', // Default to OFFLINE
   },
   // OTP Verification Fields
   phoneOtp: {
@@ -179,7 +179,7 @@ userSchema.pre('validate', function (next) {
   try {
     // Get role - default to 'user' for new documents (which is what normal signup creates)
     const userRole = (this.role !== undefined && this.role !== null) ? this.role : 'user';
-    
+
     // For ALL non-delivery users, ALWAYS remove vehicleType completely before validation
     // This ensures Mongoose never tries to validate it for regular users
     if (userRole !== 'delivery') {
@@ -193,16 +193,16 @@ userSchema.pre('validate', function (next) {
       if (this.vehicleType === null) {
         delete this.vehicleType;
       }
-      
+
       // Mark as unset to prevent Mongoose from including it in validation/save
       this.$unset = this.$unset || {};
       this.$unset.vehicleType = '';
-      
+
       // Remove from Mongoose internal structures
       if (this._doc) {
         delete this._doc.vehicleType;
       }
-      
+
       // Remove from modified paths to prevent validation
       if (this.$__ && this.$__.modifiedPaths) {
         const index = this.$__.modifiedPaths.indexOf('vehicleType');
@@ -210,7 +210,7 @@ userSchema.pre('validate', function (next) {
           this.$__.modifiedPaths.splice(index, 1);
         }
       }
-      
+
       // Also remove from direct properties
       if (this.isDirectModified && this.isDirectModified('vehicleType')) {
         this.unset('vehicleType');

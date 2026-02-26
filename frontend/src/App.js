@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { SocketProvider } from "./context/SocketContext";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -55,195 +56,197 @@ import Blog from "./pages/Blog";
 function App() {
   return (
     <Router>
-      <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Navbar />
+      <SocketProvider>
+        <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Navbar />
 
-        <main style={{ flex: 1 }}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/delivery/login" element={<DeliveryLogin />} />
-          <Route path="/delivery/signup" element={<DeliverySignup />} />
-          <Route path="/delivery/verify-otp" element={<VerifyOTP />} />
-          <Route path="/delivery/verify-email/:token" element={<VerifyEmail />} />
-          <Route path="/foods" element={<Foods />} />
-          <Route path="/foods/:id" element={<FoodDetails />} />
+          <main style={{ flex: 1 }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/delivery/login" element={<DeliveryLogin />} />
+              <Route path="/delivery/signup" element={<DeliverySignup />} />
+              <Route path="/delivery/verify-otp" element={<VerifyOTP />} />
+              <Route path="/delivery/verify-email/:token" element={<VerifyEmail />} />
+              <Route path="/foods" element={<Foods />} />
+              <Route path="/foods/:id" element={<FoodDetails />} />
 
-          {/* Footer Pages */}
-          <Route path="/terms" element={<TermsAndConditions />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/refund" element={<RefundPolicy />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/about" element={<AboutUs />} />
-          <Route path="/contact" element={<ContactUs />} />
-          <Route path="/careers" element={<Careers />} />
-          <Route path="/blog" element={<Blog />} />
+              {/* Footer Pages */}
+              <Route path="/terms" element={<TermsAndConditions />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/refund" element={<RefundPolicy />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<ContactUs />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/blog" element={<Blog />} />
 
-          <Route
-            path="/cart"
-            element={
-              <PrivateRoute>
-                <Cart />
-              </PrivateRoute>
-            }
-          />
+              <Route
+                path="/cart"
+                element={
+                  <PrivateRoute>
+                    <Cart />
+                  </PrivateRoute>
+                }
+              />
 
-          <Route
-            path="/checkout"
-            element={
-              <PrivateRoute>
-                <Checkout />
-              </PrivateRoute>
-            }
-          />
+              <Route
+                path="/checkout"
+                element={
+                  <PrivateRoute>
+                    <Checkout />
+                  </PrivateRoute>
+                }
+              />
 
-          <Route
-            path="/orders"
-            element={
-              <PrivateRoute>
-                <Orders />
-              </PrivateRoute>
-            }
-          />
+              <Route
+                path="/orders"
+                element={
+                  <PrivateRoute>
+                    <Orders />
+                  </PrivateRoute>
+                }
+              />
 
-          <Route
-            path="/orders/:id"
-            element={
-              <PrivateRoute>
-                <OrderDetails />
-              </PrivateRoute>
-            }
-          />
+              <Route
+                path="/orders/:id"
+                element={
+                  <PrivateRoute>
+                    <OrderDetails />
+                  </PrivateRoute>
+                }
+              />
 
-          <Route
-            path="/profile"
-            element={
-              <PrivateRoute>
-                <Profile />
-              </PrivateRoute>
-            }
-          />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
 
-          {/* Admin Routes */}
-          <Route
-            path="/admin/dashboard"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
+              {/* Admin Routes */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/foods"
-            element={
-              <AdminRoute>
-                <AdminFoods />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/foods"
+                element={
+                  <AdminRoute>
+                    <AdminFoods />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/orders"
-            element={
-              <AdminRoute>
-                <AdminOrders />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/orders"
+                element={
+                  <AdminRoute>
+                    <AdminOrders />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/users"
-            element={
-              <AdminRoute>
-                <AdminUsers />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/users"
+                element={
+                  <AdminRoute>
+                    <AdminUsers />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/categories"
-            element={
-              <AdminRoute>
-                <AdminCategories />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/categories"
+                element={
+                  <AdminRoute>
+                    <AdminCategories />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/restaurants"
-            element={
-              <AdminRoute>
-                <AdminRestaurants />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/restaurants"
+                element={
+                  <AdminRoute>
+                    <AdminRestaurants />
+                  </AdminRoute>
+                }
+              />
 
-          <Route
-            path="/admin/delivery-partners"
-            element={
-              <AdminRoute>
-                <AdminDeliveryPartners />
-              </AdminRoute>
-            }
-          />
+              <Route
+                path="/admin/delivery-partners"
+                element={
+                  <AdminRoute>
+                    <AdminDeliveryPartners />
+                  </AdminRoute>
+                }
+              />
 
-          {/* Restaurant Admin Routes */}
-          <Route
-            path="/restaurant-admin/dashboard"
-            element={
-              <RestaurantAdminRoute>
-                <RestaurantAdminDashboard />
-              </RestaurantAdminRoute>
-            }
-          />
+              {/* Restaurant Admin Routes */}
+              <Route
+                path="/restaurant-admin/dashboard"
+                element={
+                  <RestaurantAdminRoute>
+                    <RestaurantAdminDashboard />
+                  </RestaurantAdminRoute>
+                }
+              />
 
-          <Route
-            path="/restaurant-admin/foods"
-            element={
-              <RestaurantAdminRoute>
-                <RestaurantAdminFoods />
-              </RestaurantAdminRoute>
-            }
-          />
+              <Route
+                path="/restaurant-admin/foods"
+                element={
+                  <RestaurantAdminRoute>
+                    <RestaurantAdminFoods />
+                  </RestaurantAdminRoute>
+                }
+              />
 
-          <Route
-            path="/restaurant-admin/orders"
-            element={
-              <RestaurantAdminRoute>
-                <RestaurantAdminOrders />
-              </RestaurantAdminRoute>
-            }
-          />
+              <Route
+                path="/restaurant-admin/orders"
+                element={
+                  <RestaurantAdminRoute>
+                    <RestaurantAdminOrders />
+                  </RestaurantAdminRoute>
+                }
+              />
 
-          {/* Delivery */}
-          <Route
-            path="/delivery/dashboard"
-            element={
-              <DeliveryRoute>
-                <DeliveryDashboard />
-              </DeliveryRoute>
-            }
-          />
-          <Route
-            path="/delivery/profile"
-            element={
-              <DeliveryRoute>
-                <DeliveryProfile />
-              </DeliveryRoute>
-            }
-          />
-        </Routes>
-        </main>
+              {/* Delivery */}
+              <Route
+                path="/delivery/dashboard"
+                element={
+                  <DeliveryRoute>
+                    <DeliveryDashboard />
+                  </DeliveryRoute>
+                }
+              />
+              <Route
+                path="/delivery/profile"
+                element={
+                  <DeliveryRoute>
+                    <DeliveryProfile />
+                  </DeliveryRoute>
+                }
+              />
+            </Routes>
+          </main>
 
-        <Footer />
+          <Footer />
 
-        {/* ✅ CHATBOT (GLOBAL FLOATING BUTTON) */}
-        <ChatbotPopup />
+          {/* ✅ CHATBOT (GLOBAL FLOATING BUTTON) */}
+          <ChatbotPopup />
 
-        <ToastContainer position="top-right" autoClose={3000} />
-      </div>
+          <ToastContainer position="top-right" autoClose={3000} />
+        </div>
+      </SocketProvider>
     </Router>
   );
 }

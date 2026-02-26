@@ -37,11 +37,12 @@ const findNextAvailableDeliveryGuy = async () => {
 };
 
 // Helper function to calculate delivery fee
-const calculateDeliveryFee = (distance) => {
-  // Base fee + per km charge (adjust as needed)
+const calculateDeliveryFee = (distance, totalAmount = 0) => {
+  // Base fee + per km charge + 5% of order amount
   const baseFee = 20; // Base delivery fee in currency units
   const perKmFee = 5; // Per kilometer charge
-  return baseFee + (distance * perKmFee);
+  const percentageFee = totalAmount * 0.05; // 5% of order value
+  return Math.round(baseFee + (distance * perKmFee) + percentageFee);
 };
 
 // Helper function to calculate distance (placeholder - integrate with maps API)
@@ -51,11 +52,13 @@ const calculateDistance = (restaurantAddress, deliveryAddress) => {
   return Math.floor(Math.random() * 10) + 1;
 };
 
-// Helper function to auto-cancel orders that haven't been accepted within 10 minutes
+// Helper function to auto-cancel orders (DISABLED)
 const autoCancelExpiredOrders = async () => {
+  return 0; // Disabled
+  /*
   try {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes in milliseconds
-    
+
     // Find orders that are READY_FOR_PICKUP, not assigned, and older than 10 minutes
     const expiredOrders = await Order.find({
       status: 'READY_FOR_PICKUP',
@@ -65,7 +68,7 @@ const autoCancelExpiredOrders = async () => {
 
     if (expiredOrders.length > 0) {
       console.log(`Auto-cancelling ${expiredOrders.length} expired order(s)`);
-      
+
       for (const order of expiredOrders) {
         // Cancel the order
         order.status = 'CANCELLED';
@@ -96,7 +99,7 @@ const autoCancelExpiredOrders = async () => {
           .populate('user', 'name email phone')
           .populate('restaurant', 'name address phone admin')
           .populate('items.food');
-        
+
         socketHelper.emitOrderUpdate(updatedOrder, 'order-cancelled');
       }
     }
@@ -106,6 +109,7 @@ const autoCancelExpiredOrders = async () => {
     console.error('Error auto-cancelling expired orders:', error);
     return 0;
   }
+  */
 };
 
 // @desc    Get new order requests (available orders)
@@ -115,28 +119,32 @@ exports.getNewOrders = async (req, res) => {
   try {
     // Check if delivery partner is verified and online
     const deliveryPartner = await User.findById(req.user.id);
-    
+
     if (!deliveryPartner.isVerified) {
       return res.status(403).json({
         message: 'Account not verified. Please wait for admin approval.',
       });
     }
 
-    if (deliveryPartner.availabilityStatus !== 'ONLINE') {
+    // Check availabilityStatus (or fallback to status)
+    const currentStatus = deliveryPartner.availabilityStatus || deliveryPartner.status || 'OFFLINE';
+
+    if (currentStatus !== 'ONLINE') {
       return res.status(400).json({
-        message: 'You must be ONLINE to receive new orders',
+        message: `You must be ONLINE to receive new orders. Current status: ${currentStatus}`,
       });
     }
 
     // Auto-cancel expired orders (not accepted within 10 minutes)
-    await autoCancelExpiredOrders();
+    // Auto-cancel expired orders (disabled for testing manually)
+    // await autoCancelExpiredOrders();
 
-    // Get orders that are READY_FOR_PICKUP, not assigned to any delivery person, and created within last 10 minutes
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
-    const orders = await Order.find({ 
+    // Get orders that are READY_FOR_PICKUP, not assigned to any delivery person, and created within last 24 hours
+    const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours
+    const orders = await Order.find({
       status: 'READY_FOR_PICKUP',
       deliveryPerson: null,
-      createdAt: { $gt: tenMinutesAgo } // Only orders created in the last 10 minutes
+      createdAt: { $gt: timeWindow } // Orders created in the last 24 hours
     })
       .populate('user', 'name email phone')
       .populate('restaurant', 'name address phone')
@@ -150,7 +158,7 @@ exports.getNewOrders = async (req, res) => {
           order.restaurant.address,
           order.deliveryAddress
         );
-        const deliveryFee = calculateDeliveryFee(distance);
+        const deliveryFee = calculateDeliveryFee(distance, order.totalAmount);
         const estimatedEarnings = deliveryFee;
 
         return {
@@ -210,8 +218,8 @@ exports.acceptOrder = async (req, res) => {
 
     // Check if order is READY_FOR_PICKUP
     if (order.status !== 'READY_FOR_PICKUP') {
-      return res.status(400).json({ 
-        message: `Order is not ready for pickup. Current status: ${order.status}` 
+      return res.status(400).json({
+        message: `Order is not ready for pickup. Current status: ${order.status}`
       });
     }
 
@@ -247,8 +255,8 @@ exports.acceptOrder = async (req, res) => {
         );
       }
 
-      return res.status(400).json({ 
-        message: 'This order has expired and was automatically cancelled. It was not accepted within 10 minutes.' 
+      return res.status(400).json({
+        message: 'This order has expired and was automatically cancelled. It was not accepted within 10 minutes.'
       });
     }
 
@@ -261,8 +269,8 @@ exports.acceptOrder = async (req, res) => {
     }
 
     if (deliveryPartner.availabilityStatus !== 'ONLINE') {
-      return res.status(400).json({ 
-        message: 'You must be ONLINE to accept orders' 
+      return res.status(400).json({
+        message: 'You must be ONLINE to accept orders'
       });
     }
 
@@ -286,10 +294,10 @@ exports.acceptOrder = async (req, res) => {
     await order.save();
 
     // Update delivery person status to BUSY
-    await User.findByIdAndUpdate(req.user.id, { 
+    await User.findByIdAndUpdate(req.user.id, {
       availabilityStatus: 'BUSY',
       status: 'BUSY',
-      isAvailable: false 
+      isAvailable: false
     });
 
     // Create notifications
@@ -345,8 +353,8 @@ exports.rejectOrder = async (req, res) => {
 
     // Check if order is READY_FOR_PICKUP
     if (order.status !== 'READY_FOR_PICKUP') {
-      return res.status(400).json({ 
-        message: `Cannot reject order with status ${order.status}` 
+      return res.status(400).json({
+        message: `Cannot reject order with status ${order.status}`
       });
     }
 
@@ -415,8 +423,8 @@ exports.deliverOrder = async (req, res) => {
 
     // Check if order is OUT_FOR_DELIVERY
     if (order.status !== 'OUT_FOR_DELIVERY') {
-      return res.status(400).json({ 
-        message: `Order is not out for delivery. Current status: ${order.status}` 
+      return res.status(400).json({
+        message: `Order is not out for delivery. Current status: ${order.status}`
       });
     }
 
@@ -431,7 +439,7 @@ exports.deliverOrder = async (req, res) => {
       order.restaurant.address,
       order.deliveryAddress
     );
-    const deliveryFee = order.deliveryFee || calculateDeliveryFee(distance);
+    const deliveryFee = order.deliveryFee || calculateDeliveryFee(distance, order.totalAmount);
     const tip = order.tip || 0;
 
     await Earnings.create({
@@ -445,10 +453,10 @@ exports.deliverOrder = async (req, res) => {
     });
 
     // Update delivery person status back to ONLINE
-    await User.findByIdAndUpdate(req.user.id, { 
+    await User.findByIdAndUpdate(req.user.id, {
       availabilityStatus: 'ONLINE',
       status: 'ONLINE',
-      isAvailable: true 
+      isAvailable: true
     });
 
     // Create notifications
@@ -513,26 +521,28 @@ exports.updateAvailability = async (req, res) => {
     }
 
     const user = await User.findById(req.user.id);
-    
-    // If setting to available, also set status to AVAILABLE
+
+    // If setting to available, also set status to ONLINE for consistency
     if (isAvailable) {
       user.isAvailable = true;
-      user.status = 'AVAILABLE';
+      user.status = 'ONLINE';
+      user.availabilityStatus = 'ONLINE';
     } else {
       // Only allow setting to unavailable if not currently delivering
-      const activeDeliveries = await Order.countDocuments({ 
+      const activeDeliveries = await Order.countDocuments({
         deliveryPerson: req.user.id,
         status: 'OUT_FOR_DELIVERY'
       });
 
       if (activeDeliveries > 0) {
-        return res.status(400).json({ 
-          message: 'Cannot set unavailable while you have active deliveries' 
+        return res.status(400).json({
+          message: 'Cannot set unavailable while you have active deliveries'
         });
       }
 
       user.isAvailable = false;
-      user.status = 'BUSY';
+      user.status = 'OFFLINE';
+      user.availabilityStatus = 'OFFLINE';
     }
 
     await user.save();
@@ -561,19 +571,29 @@ exports.getStats = async (req, res) => {
     const [totalOrders, deliveredOrders, inProgressOrders, availableOrders] = await Promise.all([
       Order.countDocuments({ deliveryPerson: req.user.id }),
       Order.countDocuments({ deliveryPerson: req.user.id, status: 'DELIVERED' }),
-      Order.countDocuments({ 
-        deliveryPerson: req.user.id, 
-        status: 'OUT_FOR_DELIVERY' 
+      Order.countDocuments({
+        deliveryPerson: req.user.id,
+        status: 'OUT_FOR_DELIVERY'
       }),
-      Order.countDocuments({ 
+      Order.countDocuments({
         status: 'READY_FOR_PICKUP',
-        deliveryPerson: null 
+        deliveryPerson: null
       }),
     ]);
 
-    // Calculate total earnings (assuming delivery fee is $2 per order)
-    const deliveryFee = 2;
-    const totalEarnings = deliveredOrders * deliveryFee;
+    // Calculate total earnings from database instead of hardcoded estimate
+    const earningsAgg = await Earnings.aggregate([
+      { $match: { deliveryPartner: req.user.id, status: { $ne: 'cancelled' } } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const totalEarnings = earningsAgg[0]?.total || 0;
+
+    // Force fetch fresh user data to ensure status is up to date
+    const freshUser = await User.findById(req.user.id);
+
+    // Determine the correct status to return
+    // Priority: 1. DB availabilityStatus, 2. DB status, 3. Default to 'ONLINE' (to avoid auto-offline issues)
+    const currentStatus = freshUser.availabilityStatus || freshUser.status || 'ONLINE';
 
     res.json({
       success: true,
@@ -583,8 +603,9 @@ exports.getStats = async (req, res) => {
         inProgressOrders,
         availableOrders,
         totalEarnings,
-        isAvailable: req.user.isAvailable,
-        status: req.user.availabilityStatus || req.user.status || 'OFFLINE',
+        isAvailable: freshUser.isAvailable,
+        status: currentStatus,
+        availabilityStatus: currentStatus,
       },
     });
   } catch (error) {
@@ -609,6 +630,7 @@ exports.updateStatus = async (req, res) => {
 
     // Check if trying to go ONLINE but not verified
     if (availabilityStatus === 'ONLINE' && !deliveryPartner.isVerified) {
+      console.warn('[updateStatus] Blocked: User not verified');
       return res.status(403).json({
         message: 'Cannot go ONLINE. Account is not verified. Please wait for admin approval.',
       });
@@ -629,24 +651,39 @@ exports.updateStatus = async (req, res) => {
       });
 
       if (activeDeliveries > 0) {
+        console.warn('[updateStatus] Blocked: Active deliveries present');
         return res.status(400).json({
           message: 'Cannot go OFFLINE while you have active deliveries',
         });
       }
     }
 
-    deliveryPartner.availabilityStatus = availabilityStatus;
-    deliveryPartner.status = availabilityStatus === 'ONLINE' ? 'ONLINE' : 'OFFLINE';
-    deliveryPartner.isAvailable = availabilityStatus === 'ONLINE';
-    await deliveryPartner.save();
+    // Use findById first to get the document
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Update fields
+    user.availabilityStatus = availabilityStatus;
+    user.status = availabilityStatus === 'ONLINE' ? 'ONLINE' : 'OFFLINE';
+    user.isAvailable = availabilityStatus === 'ONLINE';
+
+    // Save to trigger any middleware and ensure persistence
+    const updatedPartner = await user.save();
+
+    if (!updatedPartner) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     res.json({
       success: true,
       message: `Status updated to ${availabilityStatus}`,
       data: {
-        id: deliveryPartner._id,
-        availabilityStatus: deliveryPartner.availabilityStatus,
-        isAvailable: deliveryPartner.isAvailable,
+        id: updatedPartner._id,
+        availabilityStatus: updatedPartner.availabilityStatus,
+        isAvailable: updatedPartner.isAvailable,
       },
     });
   } catch (error) {
@@ -721,15 +758,15 @@ exports.getDashboard = async (req, res) => {
     // Get new order requests (if online)
     let newOrderRequests = [];
     if (deliveryPartner.availabilityStatus === 'ONLINE' && deliveryPartner.isVerified) {
-      // Auto-cancel expired orders first
-      await autoCancelExpiredOrders();
+      // Auto-cancel expired orders (disabled for testing manually)
+      // await autoCancelExpiredOrders();
 
-      // Get orders that are READY_FOR_PICKUP, not assigned, and created within last 10 minutes
-      const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+      // Get orders that are READY_FOR_PICKUP, not assigned, and created within last 24 hours
+      const timeWindow = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours
       const newOrders = await Order.find({
         status: 'READY_FOR_PICKUP',
         deliveryPerson: null,
-        createdAt: { $gt: tenMinutesAgo }
+        createdAt: { $gt: timeWindow }
       })
         .populate('user', 'name email phone')
         .populate('restaurant', 'name address phone')
@@ -742,7 +779,7 @@ exports.getDashboard = async (req, res) => {
             order.restaurant.address,
             order.deliveryAddress
           );
-          const deliveryFee = calculateDeliveryFee(distance);
+          const deliveryFee = calculateDeliveryFee(distance, order.totalAmount);
           return {
             ...order.toObject(),
             distance,

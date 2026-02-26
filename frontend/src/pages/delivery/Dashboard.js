@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { SocketContext } from '../../context/SocketContext';
 import LiveLocationTracker from '../../components/LiveLocationTracker';
 import '../admin/Admin.css';
 
@@ -10,7 +11,8 @@ const DeliveryDashboard = () => {
   const [myOrders, setMyOrders] = useState([]);
   const [activeOrder, setActiveOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [availabilityStatus, setAvailabilityStatus] = useState('ONLINE');
+  const [availabilityStatus, setAvailabilityStatus] = useState('OFFLINE');
+  const { socket } = useContext(SocketContext);
 
   useEffect(() => {
     fetchData();
@@ -19,48 +21,42 @@ const DeliveryDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Set to ONLINE by default when component mounts (only if status is not set at all)
+  // Socket listeners
   useEffect(() => {
-    const setInitialStatus = async () => {
-      try {
-        const response = await api.get('/delivery/stats');
-        const currentStatus = response.data.stats?.availabilityStatus;
-        
-        // Only auto-set to ONLINE if status is completely undefined/null (first login)
-        // Don't override if user has explicitly set it to OFFLINE
-        if (!currentStatus) {
-          try {
-            await api.patch('/delivery/status', { availabilityStatus: 'ONLINE' });
-            setAvailabilityStatus('ONLINE');
-            toast.success('You are now ONLINE');
-          } catch (err) {
-            console.warn('Could not auto-set to ONLINE:', err);
-            // If error is due to verification, set to OFFLINE
-            if (err.response?.status === 403) {
-              setAvailabilityStatus('OFFLINE');
-            }
-          }
-        } else {
-          // Use the existing status from server
-          setAvailabilityStatus(currentStatus);
-        }
-      } catch (error) {
-        console.warn('Could not fetch initial status:', error);
-        // Default to ONLINE if we can't fetch status
-        setAvailabilityStatus('ONLINE');
+    if (socket) {
+      socket.on('new-order-request', (data) => {
+        toast.info('New order available! Check Available Orders.');
+        // Refresh to get full order details including distance/earnings
+        fetchData();
+      });
+
+      socket.on('order-removed', (data) => {
+        // Remove from available orders list immediately
+        setAvailableOrders(prevOrders =>
+          prevOrders.filter(order => order._id !== data.orderId)
+        );
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('new-order-request');
+        socket.off('order-removed');
       }
     };
-    setInitialStatus();
-  }, []);
+  }, [socket]);
+
+  // Fetch initial status when component mounts - REMOVED as fetchData() already handles this.
+  // and we don't want to auto-set online anymore.
 
   const fetchData = async () => {
     try {
       // Fetch stats and dashboard first (these don't require verification)
       const [statsRes, dashboardRes] = await Promise.all([
-        api.get('/delivery/stats'),
+        api.get(`/delivery/stats?t=${Date.now()}`),
         api.get('/delivery/dashboard'),
       ]);
-      
+
       // Then fetch orders (may fail if not verified, but that's okay)
       let availableRes, myOrdersRes;
       try {
@@ -76,27 +72,37 @@ const DeliveryDashboard = () => {
       }
       setStats(statsRes.data.stats);
       setAvailableOrders(availableRes.data.data || availableRes.data.orders || []);
-      
+
       const allMyOrders = myOrdersRes.data.orders || myOrdersRes.data.data || [];
       setMyOrders(allMyOrders);
-      
+
       // Find active order (status: OUT_FOR_DELIVERY, PICKED_UP, ON_THE_WAY)
-      const active = allMyOrders.find(order => 
-        order.status === 'OUT_FOR_DELIVERY' || 
-        order.status === 'PICKED_UP' || 
+      const active = allMyOrders.find(order =>
+        order.status === 'OUT_FOR_DELIVERY' ||
+        order.status === 'PICKED_UP' ||
         order.status === 'ON_THE_WAY'
       );
-      
+
       // Get active order from dashboard response or from myOrders
       const dashboardActiveOrder = dashboardRes.data.data?.activeOrder || dashboardRes.data?.activeOrder || null;
       setActiveOrder(dashboardActiveOrder || active || null);
-      
-      // Update availability status from server (respects user's manual changes)
-      // If there's an active order, status should be BUSY
-      if (dashboardActiveOrder || active) {
-        setAvailabilityStatus('BUSY');
-      } else if (statsRes.data.stats?.availabilityStatus) {
-        setAvailabilityStatus(statsRes.data.stats.availabilityStatus);
+
+      // Update availability status from server
+      // The server (getStats) now handles the logic for resolving status
+      const serverStatus = statsRes.data.stats?.availabilityStatus || statsRes.data.stats?.status;
+
+      if (serverStatus) {
+        setAvailabilityStatus(serverStatus);
+      } else {
+        // If server returns nothing, it means something is wrong with the API or DB
+        // But defaulting to ONLINE hides the issue. Let's default to OFFLINE to be safe, 
+        // OR warn the user.
+        console.warn('[Dashboard] No status in stats!', statsRes.data);
+        // If we are here, it means the previous default to ONLINE was masking the issue.
+        // Let's rely on what we have locally, or default to OFFLINE.
+        // But if the user JUST toggled online, we don't want to flip them back if the API is slow?
+        // No, this is the polling API. It should be the source of truth.
+        setAvailabilityStatus('OFFLINE');
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -104,9 +110,9 @@ const DeliveryDashboard = () => {
       try {
         const myOrdersRes = await api.get('/delivery/orders');
         const orders = myOrdersRes.data.orders || myOrdersRes.data.data || [];
-        const active = orders.find(order => 
-          order.status === 'OUT_FOR_DELIVERY' || 
-          order.status === 'PICKED_UP' || 
+        const active = orders.find(order =>
+          order.status === 'OUT_FOR_DELIVERY' ||
+          order.status === 'PICKED_UP' ||
           order.status === 'ON_THE_WAY'
         );
         setActiveOrder(active || null);
@@ -122,33 +128,33 @@ const DeliveryDashboard = () => {
   const acceptOrder = async (orderId) => {
     try {
       const response = await api.post(`/delivery/orders/${orderId}/accept`);
-      
+
       // Get the accepted order from response
       const acceptedOrder = response.data?.order || response.data?.data?.order;
-      
+
       if (acceptedOrder) {
         // Immediately update UI: Add to activeOrder
         setActiveOrder(acceptedOrder);
-        
+
         // Remove from availableOrders
-        setAvailableOrders(prevOrders => 
+        setAvailableOrders(prevOrders =>
           prevOrders.filter(order => order._id !== orderId)
         );
-        
+
         // Add to myOrders if not already there
         setMyOrders(prevOrders => {
           const exists = prevOrders.find(order => order._id === orderId);
           if (!exists) {
             return [acceptedOrder, ...prevOrders];
           }
-          return prevOrders.map(order => 
+          return prevOrders.map(order =>
             order._id === orderId ? acceptedOrder : order
           );
         });
-        
+
         // Update availability status to BUSY (since they now have an active order)
         setAvailabilityStatus('BUSY');
-        
+
         toast.success('Order accepted successfully! It is now in your Active Delivery section.');
       } else {
         // If order not in response, refresh to get updated data
@@ -170,14 +176,14 @@ const DeliveryDashboard = () => {
     }
     try {
       await api.post(`/delivery/orders/${orderId}/reject`);
-      
+
       // Immediately remove from availableOrders for better UX
-      setAvailableOrders(prevOrders => 
+      setAvailableOrders(prevOrders =>
         prevOrders.filter(order => order._id !== orderId)
       );
-      
+
       toast.info('Order rejected. It will be offered to another delivery partner.');
-      
+
       // Refresh data after a short delay to ensure consistency
       setTimeout(() => {
         fetchData();
@@ -203,13 +209,13 @@ const DeliveryDashboard = () => {
     try {
       // Determine new status based on current status
       const newStatus = availabilityStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-      
+
       // Optimistically update UI first for better UX
       setAvailabilityStatus(newStatus);
-      
+
       // Call API to update status
       const response = await api.patch('/delivery/status', { availabilityStatus: newStatus });
-      
+
       // Confirm status from server response
       if (response.data && response.data.data) {
         const confirmedStatus = response.data.data.availabilityStatus || newStatus;
@@ -220,27 +226,33 @@ const DeliveryDashboard = () => {
         setAvailabilityStatus(newStatus);
         toast.success(`You are now ${newStatus}`);
       }
-      
+
       // Refresh data after status change to get updated stats
       setTimeout(() => {
         fetchData();
       }, 500);
     } catch (error) {
       console.error('Toggle availability error:', error);
-      
-      // Revert optimistic update on error
-      setAvailabilityStatus(availabilityStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE');
-      
+
+      // Revert optimistic update on error - simply set back to original status
+      setAvailabilityStatus(availabilityStatus);
+
+      console.error('Toggle availability error details:', error.response?.data);
+
       const errorMessage = error.response?.data?.message || 'Error updating status';
       toast.error(errorMessage);
-      
-      // If access denied, suggest re-login
+
+      // If access denied (403), it might be due to verification status
       if (error.response?.status === 403) {
-        setTimeout(() => {
-          toast.info('Please try logging out and logging back in', { autoClose: 5000 });
-        }, 2000);
+        if (errorMessage.includes('verified')) {
+          toast.warning('Account verification needed to go ONLINE');
+        } else {
+          setTimeout(() => {
+            toast.info('Please try logging out and logging back in', { autoClose: 5000 });
+          }, 2000);
+        }
       }
-      
+
       // Refresh to get actual status from server
       fetchData();
     }
@@ -256,25 +268,25 @@ const DeliveryDashboard = () => {
         <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
           <h1>Delivery Dashboard</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               gap: '0.5rem',
               padding: '0.5rem 1rem',
               background: availabilityStatus === 'ONLINE' ? 'rgba(72, 196, 121, 0.1)' : 'rgba(108, 117, 125, 0.1)',
               borderRadius: '8px',
               border: `1px solid ${availabilityStatus === 'ONLINE' ? '#48c479' : '#6c757d'}`
             }}>
-              <span style={{ 
-                width: '12px', 
-                height: '12px', 
-                borderRadius: '50%', 
+              <span style={{
+                width: '12px',
+                height: '12px',
+                borderRadius: '50%',
                 background: availabilityStatus === 'ONLINE' ? '#48c479' : '#6c757d',
                 animation: availabilityStatus === 'ONLINE' ? 'pulse 2s infinite' : 'none',
                 boxShadow: availabilityStatus === 'ONLINE' ? '0 0 8px rgba(72, 196, 121, 0.6)' : 'none'
               }}></span>
-              <span style={{ 
-                fontWeight: '600', 
+              <span style={{
+                fontWeight: '600',
                 color: availabilityStatus === 'ONLINE' ? '#48c479' : '#6c757d',
                 fontSize: '0.95rem'
               }}>
@@ -285,8 +297,8 @@ const DeliveryDashboard = () => {
               onClick={toggleAvailability}
               disabled={loading}
               style={{
-                background: availabilityStatus === 'ONLINE' 
-                  ? 'linear-gradient(135deg, #48c479 0%, #3ba866 100%)' 
+                background: availabilityStatus === 'ONLINE'
+                  ? 'linear-gradient(135deg, #48c479 0%, #3ba866 100%)'
                   : 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)',
                 border: 'none',
                 color: '#fff',
@@ -295,8 +307,8 @@ const DeliveryDashboard = () => {
                 borderRadius: '12px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: availabilityStatus === 'ONLINE' 
-                  ? '0 4px 15px rgba(72, 196, 121, 0.4)' 
+                boxShadow: availabilityStatus === 'ONLINE'
+                  ? '0 4px 15px rgba(72, 196, 121, 0.4)'
                   : '0 4px 15px rgba(108, 117, 125, 0.3)',
                 fontSize: '0.95rem',
                 position: 'relative',
@@ -305,25 +317,25 @@ const DeliveryDashboard = () => {
               onMouseEnter={(e) => {
                 if (!loading) {
                   e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = availabilityStatus === 'ONLINE' 
-                    ? '0 6px 20px rgba(72, 196, 121, 0.5)' 
+                  e.target.style.boxShadow = availabilityStatus === 'ONLINE'
+                    ? '0 6px 20px rgba(72, 196, 121, 0.5)'
                     : '0 6px 20px rgba(108, 117, 125, 0.4)';
                 }
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = availabilityStatus === 'ONLINE' 
-                  ? '0 4px 15px rgba(72, 196, 121, 0.4)' 
+                e.target.style.boxShadow = availabilityStatus === 'ONLINE'
+                  ? '0 4px 15px rgba(72, 196, 121, 0.4)'
                   : '0 4px 15px rgba(108, 117, 125, 0.3)';
               }}
             >
-              {availabilityStatus === 'ONLINE' 
-                ? '🟢 You are ONLINE - Click here to go OFFLINE' 
+              {availabilityStatus === 'ONLINE'
+                ? '🟢 You are ONLINE - Click here to go OFFLINE'
                 : '⚫ You are OFFLINE - Click here to go ONLINE'}
             </button>
           </div>
         </div>
-        
+
         <style>{`
           @keyframes pulse {
             0%, 100% {
@@ -361,7 +373,7 @@ const DeliveryDashboard = () => {
         {/* Active Delivery Section */}
         <div style={{ marginTop: '2rem' }}>
           <h2>
-            🚚 Active Delivery 
+            🚚 Active Delivery
             {activeOrder && <span style={{ fontSize: '1rem', color: '#48c479', fontWeight: '600', marginLeft: '0.5rem' }}>(1 active order)</span>}
           </h2>
           {activeOrder ? (
@@ -385,7 +397,7 @@ const DeliveryDashboard = () => {
                   </p>
                   <p style={{ margin: '0.25rem 0', color: '#666' }}>
                     <strong>Phone:</strong>{' '}
-                    <a 
+                    <a
                       href={`tel:${activeOrder.user?.phone || activeOrder.user?.phoneNumber || ''}`}
                       style={{ color: '#ff6b35', textDecoration: 'none' }}
                     >
@@ -439,8 +451,8 @@ const DeliveryDashboard = () => {
               {/* Live Location Tracker */}
               {(activeOrder.status === 'OUT_FOR_DELIVERY' || activeOrder.status === 'PICKED_UP' || activeOrder.status === 'ON_THE_WAY') && (
                 <div style={{ marginTop: '1.5rem', borderTop: '2px solid #ffc107', paddingTop: '1.5rem' }}>
-                  <LiveLocationTracker 
-                    order={activeOrder} 
+                  <LiveLocationTracker
+                    order={activeOrder}
                     onLocationUpdate={(location) => {
                       console.log('Location updated:', location);
                     }}
@@ -480,11 +492,11 @@ const DeliveryDashboard = () => {
         <div style={{ marginTop: '2rem' }}>
           <h2>Available Orders {availableOrders.length === 0 && '(No new orders)'}</h2>
           {availabilityStatus !== 'ONLINE' && (
-            <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffc107', 
-              borderRadius: '4px', 
-              padding: '1rem', 
+            <div style={{
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              padding: '1rem',
               marginBottom: '1rem',
               color: '#856404'
             }}>
@@ -492,11 +504,11 @@ const DeliveryDashboard = () => {
             </div>
           )}
           {availabilityStatus === 'ONLINE' && !activeOrder && (
-            <div style={{ 
-              backgroundColor: '#d4edda', 
-              border: '1px solid #28a745', 
-              borderRadius: '4px', 
-              padding: '1rem', 
+            <div style={{
+              backgroundColor: '#d4edda',
+              border: '1px solid #28a745',
+              borderRadius: '4px',
+              padding: '1rem',
               marginBottom: '1rem',
               color: '#155724'
             }}>
@@ -504,11 +516,11 @@ const DeliveryDashboard = () => {
             </div>
           )}
           {activeOrder && (
-            <div style={{ 
-              backgroundColor: '#fff3cd', 
-              border: '1px solid #ffc107', 
-              borderRadius: '4px', 
-              padding: '1rem', 
+            <div style={{
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '4px',
+              padding: '1rem',
               marginBottom: '1rem',
               color: '#856404'
             }}>
@@ -545,36 +557,53 @@ const DeliveryDashboard = () => {
                       </td>
                       <td>₹{order.totalAmount?.toFixed(2) || '0.00'}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                           <button
                             onClick={() => acceptOrder(order._id)}
                             className="btn-primary"
                             disabled={availabilityStatus !== 'ONLINE' || !!activeOrder}
-                            style={{ 
-                              fontSize: '0.875rem', 
-                              padding: '0.5rem 1rem',
+                            style={{
+                              fontSize: '0.9rem',
+                              padding: '0.6rem 1.2rem',
+                              backgroundColor: '#48c479',
+                              border: 'none',
+                              borderRadius: '6px',
+                              color: 'white',
+                              fontWeight: '600',
+                              boxShadow: '0 2px 4px rgba(72, 196, 121, 0.3)',
                               opacity: (availabilityStatus !== 'ONLINE' || activeOrder) ? 0.6 : 1,
-                              cursor: (availabilityStatus !== 'ONLINE' || activeOrder) ? 'not-allowed' : 'pointer'
+                              cursor: (availabilityStatus !== 'ONLINE' || activeOrder) ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
                             }}
                             title={activeOrder ? 'You already have an active delivery. Complete it first.' : availabilityStatus !== 'ONLINE' ? 'You must be ONLINE to accept orders' : 'Click to accept this order'}
                           >
-                            ✓ Accept Order
+                            <span>✓</span> Accept
                           </button>
                           <button
                             onClick={() => rejectOrder(order._id)}
                             className="btn-secondary"
                             disabled={availabilityStatus !== 'ONLINE' || !!activeOrder}
-                            style={{ 
-                              fontSize: '0.875rem', 
-                              padding: '0.5rem 1rem', 
-                              borderColor: '#E23744', 
-                              color: '#E23744',
+                            style={{
+                              fontSize: '0.9rem',
+                              padding: '0.6rem 1.2rem',
+                              backgroundColor: '#fff',
+                              border: '1px solid #dc3545',
+                              borderRadius: '6px',
+                              color: '#dc3545',
+                              fontWeight: '600',
                               opacity: (availabilityStatus !== 'ONLINE' || activeOrder) ? 0.6 : 1,
-                              cursor: (availabilityStatus !== 'ONLINE' || activeOrder) ? 'not-allowed' : 'pointer'
+                              cursor: (availabilityStatus !== 'ONLINE' || activeOrder) ? 'not-allowed' : 'pointer',
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem'
                             }}
                             title={activeOrder ? 'You have an active delivery' : availabilityStatus !== 'ONLINE' ? 'You must be ONLINE to reject orders' : 'Click to reject this order'}
                           >
-                            ✕ Reject
+                            <span>✕</span> Reject
                           </button>
                         </div>
                       </td>
@@ -584,10 +613,10 @@ const DeliveryDashboard = () => {
               </table>
             </div>
           ) : (
-            <div style={{ 
-              padding: '2rem', 
-              textAlign: 'center', 
-              background: '#f8f8f8', 
+            <div style={{
+              padding: '2rem',
+              textAlign: 'center',
+              background: '#f8f8f8',
               borderRadius: '8px',
               color: '#686b78'
             }}>

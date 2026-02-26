@@ -51,8 +51,8 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
     setIsDropdownOpen(false);
   };

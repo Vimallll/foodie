@@ -46,6 +46,8 @@ app.use("/api/categories", require("./routes/categories"));
 app.use("/api/cart", require("./routes/cart"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/restaurants", require("./routes/restaurants"));
+app.use("/api/chefs", require("./routes/chefRoutes"));
+app.use("/api/super-admin", require("./routes/superAdminRoutes"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/restaurant-admin", require("./routes/restaurantAdmin"));
 app.use("/api/delivery", require("./routes/delivery"));
@@ -83,25 +85,25 @@ io.on('connection', (socket) => {
   // Join room based on user role and ID
   socket.on('join-room', (data) => {
     const { userId, role, restaurantId } = data;
-    
+
     // User joins their personal room
     socket.join(`user-${userId}`);
-    
+
     // Restaurant admin joins restaurant room
     if (role === 'restaurant_admin' && restaurantId) {
       socket.join(`restaurant-${restaurantId}`);
     }
-    
+
     // Delivery person joins delivery room
     if (role === 'delivery') {
       socket.join('delivery-partners');
     }
-    
+
     // Super admin joins admin room
     if (role === 'superAdmin' || (role === 'manager')) {
       socket.join('admin');
     }
-    
+
     console.log(`✅ User ${userId} joined rooms`);
   });
 

@@ -54,6 +54,9 @@ const Dashboard = () => {
           <Link to="/admin/categories" className="admin-nav-link">
             Manage Categories
           </Link>
+          <Link to="/admin/home-chefs" className="admin-nav-link">
+            Manage Home Chefs
+          </Link>
         </div>
 
         <div className="stats-grid">

@@ -7,13 +7,13 @@ const {
   updateFood,
   deleteFood,
 } = require('../controllers/foodController');
-const { protect, admin } = require('../middleware/auth');
+const { protect, admin, authorize, checkChefStatus } = require('../middleware/auth');
 
 router.get('/', getFoods);
 router.get('/:id', getFood);
-router.post('/', protect, admin, createFood);
-router.put('/:id', protect, admin, updateFood);
-router.delete('/:id', protect, admin, deleteFood);
+router.post('/', protect, authorize('superAdmin', 'manager', 'homeChef'), checkChefStatus, createFood);
+router.put('/:id', protect, authorize('superAdmin', 'manager', 'homeChef'), checkChefStatus, updateFood);
+router.delete('/:id', protect, authorize('superAdmin', 'manager', 'homeChef'), checkChefStatus, deleteFood);
 
 module.exports = router;
 

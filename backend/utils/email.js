@@ -141,8 +141,30 @@ const sendOTPEmail = async (email, otp, name) => {
   }
 };
 
+// Send generic email
+const sendEmail = async (options) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'Foodie <noreply@foodie.com>',
+      to: options.email,
+      subject: options.subject,
+      html: options.html || options.message, // Support both html and message property
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Email sending error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   sendEmailVerification,
   sendOTPEmail,
+  sendEmail
 };
 

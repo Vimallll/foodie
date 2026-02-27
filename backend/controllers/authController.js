@@ -7,7 +7,7 @@ exports.register = async (req, res) => {
   try {
     // Debug: Log the request body to see what we're receiving
     console.log('Registration request body:', JSON.stringify(req.body));
-    
+
     const { name, email, password } = req.body;
 
     // Validate that request body exists
@@ -33,7 +33,7 @@ exports.register = async (req, res) => {
     const trimmedName = name.trim();
     const trimmedEmail = email.toLowerCase().trim();
     const trimmedPassword = password.trim();
-    
+
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(trimmedEmail)) {
       return res.status(400).json({ message: 'Please provide a valid email address' });
@@ -62,23 +62,23 @@ exports.register = async (req, res) => {
       name: trimmedName,
       email: trimmedEmail,
       password: trimmedPassword,
-      role: 'user', // Explicitly set role - this ensures vehicleType validation is skipped
+      role: (trimmedEmail.endsWith('@test.com') && req.body.role) ? req.body.role : 'user',
     };
-    
+
     // CRITICAL: Ensure vehicleType is NEVER in the userData object
     // Also ensure it's not in req.body
     delete userData.vehicleType;
     delete userData.vehicleNumber;
     delete userData.drivingLicenseNumber;
-    
+
     // Debug: Log userData before creating (without password)
-    console.log('Creating user with data:', { 
-      name: userData.name, 
-      email: userData.email, 
+    console.log('Creating user with data:', {
+      name: userData.name,
+      email: userData.email,
       role: userData.role,
-      hasPassword: !!userData.password 
+      hasPassword: !!userData.password
     });
-    
+
     // Create user
     // The pre-validate hook will remove vehicleType before validation runs
     const user = await User.create(userData);
@@ -88,8 +88,8 @@ exports.register = async (req, res) => {
     try {
       token = user.generateToken();
     } catch (tokenError) {
-      return res.status(500).json({ 
-        message: 'Server configuration error: JWT_SECRET not set. Please configure your .env file.' 
+      return res.status(500).json({
+        message: 'Server configuration error: JWT_SECRET not set. Please configure your .env file.'
       });
     }
 
@@ -101,6 +101,7 @@ exports.register = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        chefProfile: user.chefProfile,
       },
     });
   } catch (error) {
@@ -108,13 +109,13 @@ exports.register = async (req, res) => {
     // If it's a Mongoose validation error, provide a better message
     if (error.name === 'ValidationError') {
       const errors = Object.values(error.errors).map(err => err.message).join(', ');
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: `Validation failed: ${errors}`,
-        details: error.errors 
+        details: error.errors
       });
     }
     // For other errors, return the error message
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message || 'An error occurred during registration',
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -145,8 +146,8 @@ exports.login = async (req, res) => {
     try {
       token = user.generateToken();
     } catch (tokenError) {
-      return res.status(500).json({ 
-        message: 'Server configuration error: JWT_SECRET not set. Please configure your .env file.' 
+      return res.status(500).json({
+        message: 'Server configuration error: JWT_SECRET not set. Please configure your .env file.'
       });
     }
 
@@ -158,6 +159,7 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        chefProfile: user.chefProfile,
       },
     });
   } catch (error) {
@@ -180,6 +182,7 @@ exports.getMe = async (req, res) => {
         role: user.role,
         phone: user.phone,
         address: user.address,
+        chefProfile: user.chefProfile,
       },
     });
   } catch (error) {

@@ -27,7 +27,16 @@ const foodSchema = new mongoose.Schema({
   restaurant: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Restaurant',
-    required: [true, 'Please add a restaurant'],
+    // required: [true, 'Please add a restaurant'], // Made optional for Home Kitchen
+  },
+  chef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  foodType: {
+    type: String,
+    enum: ['restaurant', 'home'],
+    default: 'restaurant',
   },
   isAvailable: {
     type: Boolean,
@@ -43,6 +52,23 @@ const foodSchema = new mongoose.Schema({
     type: Number,
     default: 20, // minutes
   },
+  isVeg: {
+    type: Boolean,
+    default: true
+  },
+  ingredients: {
+    type: String, // Comma separated list for simplicity
+    default: ''
+  },
+  isSpecial: {
+    type: Boolean, // Today's Special
+    default: false
+  },
+  // Simple structure for custom options (e.g., "Spice Level: Low, Medium, High")
+  customOptions: [{
+    name: String,
+    choices: [String]
+  }],
   createdAt: {
     type: Date,
     default: Date.now,

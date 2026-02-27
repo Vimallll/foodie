@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role !== 'delivery'; // Email not required for delivery partners
     },
     unique: true,
@@ -33,8 +33,57 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'manager', 'superAdmin', 'delivery'],
+    enum: ['user', 'manager', 'superAdmin', 'delivery', 'homeChef'],
     default: 'user',
+  },
+  // Home Chef specific fields
+  chefProfile: {
+    kitchenName: { type: String, trim: true },
+    bio: { type: String },
+    specialties: [{ type: String }],
+    experience: { type: String },
+    rating: { type: Number, default: 0 },
+    reviewCount: { type: Number, default: 0 },
+    kitchenImages: [{ type: String }],
+    availability: {
+      isAvailable: { type: Boolean, default: true },
+      schedule: { type: String } // e.g., "Mon-Fri: 9am-6pm"
+    },
+    // Super Admin Control
+    chefStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'suspended'],
+      // default: 'pending' // Removed default to prevent auto-assignment
+    },
+    rejectionReason: { type: String, default: '' },
+
+    // Verification Documents
+    fssaiLicenseNumber: { type: String, default: '' },
+    fssaiLicenseImage: { type: String, default: '' },
+    idProofType: { type: String, default: '' }, // e.g., Aadhar, PAN
+    idProofImage: { type: String, default: '' },
+
+    // Delivery Settings
+    deliveryMode: {
+      type: String,
+      enum: ['platform', 'self'],
+      default: 'platform'
+    },
+    deliveryRadius: { type: Number, default: 5 }, // In km (for self delivery)
+    deliveryCharges: { type: Number, default: 0 }, // Extra charge for self delivery
+
+    // Earnings & Wallet
+    walletBalance: { type: Number, default: 0 },
+    totalEarnings: { type: Number, default: 0 },
+    payoutHistory: [{
+      amount: Number,
+      requestedAt: { type: Date, default: Date.now },
+      status: { type: String, enum: ['pending', 'completed', 'rejected'], default: 'pending' },
+      upiId: String,
+      completedAt: Date
+    }],
+
+    documents: [{ type: String }] // Generic docs for backward compatibility
   },
   restaurant: {
     type: mongoose.Schema.Types.ObjectId,
@@ -56,7 +105,7 @@ const userSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: function() {
+    required: function () {
       return this.role === 'delivery'; // Phone required for delivery partners
     },
     default: '',
@@ -89,21 +138,21 @@ const userSchema = new mongoose.Schema({
     select: false,
     // CRITICAL: Validator that ALWAYS returns true for null/undefined OR non-delivery users
     validate: {
-      validator: function(value) {
+      validator: function (value) {
         // FIRST: Always allow null, undefined, or empty strings - this handles all edge cases
         // This must be checked FIRST before any other validation
         if (value === null || value === undefined || value === '' || value === 'null' || value === 'undefined') {
           return true; // ALWAYS allow empty/null values - no validation needed
         }
-        
+
         // SECOND: Check role - default to 'user' for new documents
         const userRole = (this && this.role !== undefined && this.role !== null) ? this.role : 'user';
-        
+
         // For non-delivery users, ALWAYS return true (field should not exist anyway)
         if (userRole !== 'delivery') {
           return true; // Always allow - field should not exist for non-delivery users
         }
-        
+
         // THIRD: Only validate for delivery partners when a value is provided
         // Validate enum values
         const validTypes = ['bike', 'cycle', 'scooter'];
@@ -179,7 +228,7 @@ userSchema.pre('validate', function (next) {
   try {
     // Get role - default to 'user' for new documents (which is what normal signup creates)
     const userRole = (this.role !== undefined && this.role !== null) ? this.role : 'user';
-    
+
     // For ALL non-delivery users, ALWAYS remove vehicleType completely before validation
     // This ensures Mongoose never tries to validate it for regular users
     if (userRole !== 'delivery') {
@@ -193,16 +242,16 @@ userSchema.pre('validate', function (next) {
       if (this.vehicleType === null) {
         delete this.vehicleType;
       }
-      
+
       // Mark as unset to prevent Mongoose from including it in validation/save
       this.$unset = this.$unset || {};
       this.$unset.vehicleType = '';
-      
+
       // Remove from Mongoose internal structures
       if (this._doc) {
         delete this._doc.vehicleType;
       }
-      
+
       // Remove from modified paths to prevent validation
       if (this.$__ && this.$__.modifiedPaths) {
         const index = this.$__.modifiedPaths.indexOf('vehicleType');
@@ -210,7 +259,7 @@ userSchema.pre('validate', function (next) {
           this.$__.modifiedPaths.splice(index, 1);
         }
       }
-      
+
       // Also remove from direct properties
       if (this.isDirectModified && this.isDirectModified('vehicleType')) {
         this.unset('vehicleType');

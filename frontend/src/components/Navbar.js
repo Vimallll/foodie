@@ -9,6 +9,8 @@ const Navbar = () => {
   const { getCartItemCount } = useContext(CartContext);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Hide Navbar for superAdmin
   const [isScrolled, setIsScrolled] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -51,6 +53,11 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   }, [location]);
 
+  // Hide Navbar for superAdmin
+  if (user?.role === 'superAdmin') {
+    return null;
+  }
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -71,6 +78,51 @@ const Navbar = () => {
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
+  // Show Chef-specific navbar for homeChef
+  if (user?.role === 'homeChef') {
+    return (
+      <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
+        <div className="navbar-container">
+          <Link to="/chef/dashboard" className="navbar-logo">
+            <span className="logo-icon">🍳</span>
+            <span className="logo-text">Chef Dashboard</span>
+          </Link>
+          <div className="navbar-menu">
+            <Link to="/chef/dashboard" className={`navbar-link ${isActive('/chef/dashboard') ? 'active' : ''}`}>
+              Dashboard
+            </Link>
+            <div className="user-dropdown" ref={dropdownRef}>
+              <button className="user-avatar-button" onClick={() => setIsDropdownOpen(!isDropdownOpen)} aria-label="User menu">
+                <div className="user-avatar">{getInitials(user?.name)}</div>
+                <span className="user-name">{user?.name?.split(' ')[0]}</span>
+                <span className={`dropdown-arrow ${isDropdownOpen ? 'open' : ''}`}>▼</span>
+              </button>
+              {isDropdownOpen && (
+                <div className="dropdown-menu">
+                  <div className="dropdown-header">
+                    <div className="dropdown-avatar">{getInitials(user?.name)}</div>
+                    <div className="dropdown-user-info">
+                      <div className="dropdown-user-name">{user?.name}</div>
+                      <div className="dropdown-user-email">{user?.email}</div>
+                    </div>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <Link to="/chef/dashboard" className="dropdown-item" onClick={() => setIsDropdownOpen(false)}>
+                    <span className="dropdown-icon">📊</span> Dashboard
+                  </Link>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item dropdown-item-danger" onClick={handleLogout}>
+                    <span className="dropdown-icon">🚪</span> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
       <div className="navbar-container">
@@ -82,23 +134,32 @@ const Navbar = () => {
 
 
         {/* Desktop Menu */}
-        <div 
+        <div
           ref={mobileMenuRef}
           className={`navbar-menu ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}
         >
-          <Link 
-            to="/foods" 
+          <Link
+            to="/foods"
             className={`navbar-link ${isActive('/foods') ? 'active' : ''}`}
           >
             Foods
           </Link>
 
+          <Link
+            to="/home-kitchen"
+            className={`navbar-link ${isActive('/home-kitchen') ? 'active' : ''}`}
+          >
+            Home Kitchen 🏠
+          </Link>
+
+
+
           {isAuthenticated ? (
             <>
               {/* Hide cart for delivery guys */}
               {user?.role !== 'delivery' && (
-                <Link 
-                  to="/cart" 
+                <Link
+                  to="/cart"
                   className={`navbar-link cart-link ${isActive('/cart') ? 'active' : ''}`}
                 >
                   <span className="cart-icon">🛒</span>
@@ -134,8 +195,8 @@ const Navbar = () => {
                     <div className="dropdown-divider"></div>
                     {/* Hide profile for delivery guys - they have their own profile */}
                     {user?.role !== 'delivery' && (
-                      <Link 
-                        to="/profile" 
+                      <Link
+                        to="/profile"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -145,8 +206,8 @@ const Navbar = () => {
                     )}
                     {/* Hide orders for delivery guys */}
                     {user?.role !== 'delivery' && (
-                      <Link 
-                        to="/orders" 
+                      <Link
+                        to="/orders"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -155,8 +216,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'superAdmin' && (
-                      <Link 
-                        to="/admin/dashboard" 
+                      <Link
+                        to="/admin/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -165,8 +226,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {(user?.role === 'manager' || user?.role === 'superAdmin') && (
-                      <Link 
-                        to="/restaurant-admin/dashboard" 
+                      <Link
+                        to="/restaurant-admin/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -175,8 +236,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'delivery' && (
-                      <Link 
-                        to="/delivery/dashboard" 
+                      <Link
+                        to="/delivery/dashboard"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -185,8 +246,8 @@ const Navbar = () => {
                       </Link>
                     )}
                     {user?.role === 'delivery' && (
-                      <Link 
-                        to="/delivery/profile" 
+                      <Link
+                        to="/delivery/profile"
                         className="dropdown-item"
                         onClick={() => setIsDropdownOpen(false)}
                       >
@@ -195,7 +256,7 @@ const Navbar = () => {
                       </Link>
                     )}
                     <div className="dropdown-divider"></div>
-                    <button 
+                    <button
                       className="dropdown-item dropdown-item-danger"
                       onClick={handleLogout}
                     >
@@ -208,14 +269,14 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className={`navbar-link ${isActive('/login') ? 'active' : ''}`}
               >
                 Login
               </Link>
-              <Link 
-                to="/delivery/login" 
+              <Link
+                to="/delivery/login"
                 className={`navbar-link ${isActive('/delivery/login') ? 'active' : ''}`}
               >
                 🚚 Delivery
@@ -238,7 +299,7 @@ const Navbar = () => {
           <span className={`hamburger-line ${isMobileMenuOpen ? 'open' : ''}`}></span>
         </button>
       </div>
-    </nav>
+    </nav >
   );
 };
 

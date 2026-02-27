@@ -50,6 +50,11 @@ const orderSchema = new mongoose.Schema({
     ref: 'Restaurant',
     default: null,
   },
+  chef: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
   deliveryPerson: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -57,7 +62,7 @@ const orderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['PLACED', 'ACCEPTED', 'REJECTED', 'PREPARING', 'READY_FOR_PICKUP', 'PICKED_UP', 'ON_THE_WAY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
+    enum: ['PLACED', 'ACCEPTED', 'REJECTED', 'PREPARING', 'READY', 'READY_FOR_PICKUP', 'PICKED_UP', 'ON_THE_WAY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
     default: 'PLACED',
   },
   paymentMethod: {
@@ -135,7 +140,7 @@ const orderSchema = new mongoose.Schema({
 });
 
 // Update updatedAt before saving
-orderSchema.pre('save', function(next) {
+orderSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   next();
 });

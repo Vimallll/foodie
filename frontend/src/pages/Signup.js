@@ -63,14 +63,14 @@ const Signup = () => {
       }
 
       const result = await register(
-        formData.name.trim(), 
-        formData.email.trim(), 
+        formData.name.trim(),
+        formData.email.trim(),
         trimmedPassword
       );
 
       if (result.success) {
-        toast.success('Registration successful!');
-        navigate('/');
+        toast.success('Registration successful! Please login to continue.');
+        navigate('/login');
       } else {
         toast.error(result.message || 'Registration failed');
       }

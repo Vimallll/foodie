@@ -58,8 +58,8 @@ const Navbar = () => {
     return null;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
     setIsDropdownOpen(false);
   };
@@ -138,12 +138,14 @@ const Navbar = () => {
           ref={mobileMenuRef}
           className={`navbar-menu ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}
         >
-          <Link
-            to="/foods"
-            className={`navbar-link ${isActive('/foods') ? 'active' : ''}`}
-          >
-            Foods
-          </Link>
+          {(!user || !['superAdmin', 'manager', 'delivery'].includes(user.role)) && (
+            <Link
+              to="/foods"
+              className={`navbar-link ${isActive('/foods') ? 'active' : ''}`}
+            >
+              Foods
+            </Link>
+          )}
 
           <Link
             to="/home-kitchen"
@@ -156,8 +158,8 @@ const Navbar = () => {
 
           {isAuthenticated ? (
             <>
-              {/* Hide cart for delivery guys */}
-              {user?.role !== 'delivery' && (
+              {/* Hide cart for admins and delivery guys */}
+              {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
                 <Link
                   to="/cart"
                   className={`navbar-link cart-link ${isActive('/cart') ? 'active' : ''}`}
@@ -193,8 +195,8 @@ const Navbar = () => {
                       </div>
                     </div>
                     <div className="dropdown-divider"></div>
-                    {/* Hide profile for delivery guys - they have their own profile */}
-                    {user?.role !== 'delivery' && (
+                    {/* Hide profile for admins and delivery guys - they have their own profile/dashboard */}
+                    {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
                       <Link
                         to="/profile"
                         className="dropdown-item"
@@ -204,8 +206,8 @@ const Navbar = () => {
                         Profile
                       </Link>
                     )}
-                    {/* Hide orders for delivery guys */}
-                    {user?.role !== 'delivery' && (
+                    {/* Hide orders for admins and delivery guys */}
+                    {user?.role !== 'delivery' && user?.role !== 'superAdmin' && user?.role !== 'manager' && (
                       <Link
                         to="/orders"
                         className="dropdown-item"

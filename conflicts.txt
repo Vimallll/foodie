@@ -1,0 +1,6 @@
+backend/middleware/auth.js
+backend/server.js
+frontend/src/App.js
+frontend/src/components/Navbar.js
+frontend/src/context/AuthContext.js
+frontend/src/pages/Login.js

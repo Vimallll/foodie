@@ -55,13 +55,13 @@ const canAccessRestaurant = (user, restaurantId) => {
 exports.getMyRestaurant = async (req, res) => {
   try {
     const restaurantId = req.params.id;
-    
+
     // SuperAdmin can get any restaurant by ID or all restaurants
     if (req.user.role === 'superAdmin') {
       if (restaurantId) {
         const restaurant = await Restaurant.findById(restaurantId)
           .populate('admin', 'name email');
-        
+
         if (!restaurant) {
           return res.status(404).json({ message: 'Restaurant not found' });
         }
@@ -216,7 +216,7 @@ exports.updateFood = async (req, res) => {
 
     // Fetch user with restaurant populated to check authorization
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     // Check authorization
     const restaurantId = food.restaurant._id || food.restaurant;
     if (!canAccessRestaurant(user, restaurantId)) {
@@ -250,7 +250,7 @@ exports.deleteFood = async (req, res) => {
 
     // Fetch user with restaurant populated to check authorization
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     // Check authorization
     const restaurantId = food.restaurant._id || food.restaurant;
     if (!canAccessRestaurant(user, restaurantId)) {
@@ -275,7 +275,7 @@ exports.getMyOrders = async (req, res) => {
   try {
     // Fetch user with restaurant populated
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     let query = {};
 
     if (user.role === 'superAdmin') {
@@ -332,7 +332,7 @@ exports.acceptOrder = async (req, res) => {
 
     // Fetch user with restaurant populated to check authorization
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     // Check authorization
     const restaurantId = order.restaurant._id || order.restaurant;
     if (!canAccessRestaurant(user, restaurantId)) {
@@ -341,8 +341,8 @@ exports.acceptOrder = async (req, res) => {
 
     // Check if order status is PLACED
     if (order.status !== 'PLACED') {
-      return res.status(400).json({ 
-        message: `Cannot accept order with status ${order.status}. Only PLACED orders can be accepted.` 
+      return res.status(400).json({
+        message: `Cannot accept order with status ${order.status}. Only PLACED orders can be accepted.`
       });
     }
 
@@ -402,7 +402,7 @@ exports.rejectOrder = async (req, res) => {
 
     // Fetch user with restaurant populated to check authorization
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     // Check authorization
     const restaurantId = order.restaurant._id || order.restaurant;
     if (!canAccessRestaurant(user, restaurantId)) {
@@ -411,8 +411,8 @@ exports.rejectOrder = async (req, res) => {
 
     // Check if order status is PLACED
     if (order.status !== 'PLACED') {
-      return res.status(400).json({ 
-        message: `Cannot reject order with status ${order.status}. Only PLACED orders can be rejected.` 
+      return res.status(400).json({
+        message: `Cannot reject order with status ${order.status}. Only PLACED orders can be rejected.`
       });
     }
 
@@ -470,10 +470,10 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Fetch user with restaurant populated to check authorization
     const user = await User.findById(req.user.id).populate('restaurant');
-    
+
     // Check authorization
     const restaurantId = order.restaurant._id || order.restaurant;
-    
+
     // Debug logging
     console.log('Update Order Status - Authorization Check:', {
       userId: user._id,
@@ -484,7 +484,7 @@ exports.updateOrderStatus = async (req, res) => {
       orderRestaurantString: restaurantId.toString(),
       restaurantMatch: user.restaurant && (user.restaurant._id?.toString() === restaurantId.toString() || user.restaurant.toString() === restaurantId.toString())
     });
-    
+
     if (!canAccessRestaurant(user, restaurantId)) {
       console.error('Authorization failed:', {
         userId: user._id,
@@ -493,7 +493,7 @@ exports.updateOrderStatus = async (req, res) => {
         orderRestaurant: restaurantId,
         restaurantMatch: user.restaurant && (user.restaurant._id?.toString() === restaurantId.toString() || user.restaurant.toString() === restaurantId.toString())
       });
-      return res.status(403).json({ 
+      return res.status(403).json({
         message: 'Not authorized to update this order. Make sure you are assigned to the restaurant that owns this order.',
         debug: process.env.NODE_ENV === 'development' ? {
           userRole: user.role,
@@ -509,14 +509,14 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Can only update from PREPARING to READY_FOR_PICKUP
     if (normalizedOrderStatus !== 'PREPARING' && normalizedNewStatus === 'READY_FOR_PICKUP') {
-      return res.status(400).json({ 
-        message: `Order must be in PREPARING status before marking as READY_FOR_PICKUP. Current status: ${order.status}` 
+      return res.status(400).json({
+        message: `Order must be in PREPARING status before marking as READY_FOR_PICKUP. Current status: ${order.status}`
       });
     }
 
     if (status !== 'READY_FOR_PICKUP') {
-      return res.status(400).json({ 
-        message: 'Can only update status to READY_FOR_PICKUP' 
+      return res.status(400).json({
+        message: 'Can only update status to READY_FOR_PICKUP'
       });
     }
 
@@ -527,58 +527,18 @@ exports.updateOrderStatus = async (req, res) => {
     order.updatedAt = Date.now();
     await order.save();
 
-    // Auto-assign delivery partner when order is ready (like Zomato/Swiggy)
+    // Auto-assign delivery partner REMOVED.
+    // Order is now broadcast to all delivery partners for manual acceptance.
     let autoAssignedDeliveryPartner = null;
-    try {
-      const User = require('../models/User');
-      // Find nearest available delivery partner
-      const availableDeliveryPartner = await User.findOne({
-        role: 'delivery',
-        availabilityStatus: 'ONLINE',
-        isActive: true,
-        isVerified: true,
-        // Not currently assigned to any active order
-        _id: {
-          $nin: await Order.distinct('deliveryPerson', {
-            status: { $in: ['PICKED_UP', 'ON_THE_WAY', 'OUT_FOR_DELIVERY'] }
-          })
-        }
-      }).sort({ createdAt: 1 }); // Assign to oldest available partner (fair distribution)
 
-      if (availableDeliveryPartner) {
-        // Auto-assign the order
-        order.deliveryPerson = availableDeliveryPartner._id;
-        order.status = 'OUT_FOR_DELIVERY';
-        order.assignedToDeliveryAt = Date.now();
-        await order.save();
-
-        // Update delivery partner status
-        availableDeliveryPartner.status = 'BUSY';
-        availableDeliveryPartner.isAvailable = false;
-        await availableDeliveryPartner.save();
-
-        autoAssignedDeliveryPartner = availableDeliveryPartner;
-
-        // Notify delivery partner
-        await createNotification(
-          availableDeliveryPartner._id,
-          order._id,
-          'New Order Assigned',
-          `Order #${order._id.toString().slice(-6)} has been assigned to you`,
-          'order_assigned'
-        );
-      }
-    } catch (error) {
-      console.error('Error auto-assigning delivery partner:', error);
-      // Continue even if auto-assignment fails - delivery partner can manually accept
-    }
+    // Notify all delivery partners about the new order request via socket.js (handled automatically by emitOrderUpdate)
 
     // Notify user
     await createNotification(
       order.user._id,
       order._id,
       autoAssignedDeliveryPartner ? 'Order Out for Delivery' : 'Order Ready',
-      autoAssignedDeliveryPartner 
+      autoAssignedDeliveryPartner
         ? `Your order #${order._id.toString().slice(-6)} is out for delivery`
         : `Your order #${order._id.toString().slice(-6)} is ready for pickup`,
       autoAssignedDeliveryPartner ? 'order_out_for_delivery' : 'order_ready'
@@ -633,9 +593,9 @@ exports.getStats = async (req, res) => {
     ]);
 
     // Calculate total revenue
-    const orders = await Order.find({ 
-      ...query, 
-      status: 'DELIVERED' 
+    const orders = await Order.find({
+      ...query,
+      status: 'DELIVERED'
     });
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 

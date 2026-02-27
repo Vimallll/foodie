@@ -136,7 +136,6 @@ exports.delivery = async (req, res, next) => {
       phone: user.phone || user.phoneNumber,
       email: user.email
     });
-
     // Update req.user with latest data
     req.user = user;
 

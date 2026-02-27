@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { SocketProvider } from "./context/SocketContext";
 
 // Components
 import Navbar from "./components/Navbar";
@@ -64,8 +65,9 @@ import Blog from "./pages/Blog";
 function App() {
   return (
     <Router>
-      <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Navbar />
+      <SocketProvider>
+        <div className="App" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Navbar />
 
         <main style={{ flex: 1 }}>
           <Routes>
@@ -280,13 +282,14 @@ function App() {
           </Routes>
         </main>
 
-        <Footer />
+          <Footer />
 
-        {/* ✅ CHATBOT (GLOBAL FLOATING BUTTON) */}
-        <ChatbotPopup />
+          {/* ✅ CHATBOT (GLOBAL FLOATING BUTTON) */}
+          <ChatbotPopup />
 
-        <ToastContainer position="top-right" autoClose={3000} />
-      </div>
+          <ToastContainer position="top-right" autoClose={3000} />
+        </div>
+      </SocketProvider>
     </Router>
   );
 }

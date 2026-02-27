@@ -6,7 +6,7 @@ import './Auth.css';
 
 const DeliveryLogin = () => {
   const [formData, setFormData] = useState({
-    phoneNumber: '',
+    identifier: '',
     password: '',
   });
   const [loading, setLoading] = useState(false);
@@ -24,21 +24,27 @@ const DeliveryLogin = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.phoneNumber) {
-      toast.error('Phone number is required');
+    if (!formData.identifier) {
+      toast.error('Phone number or Email is required');
       setLoading(false);
       return;
     }
 
+    const isEmail = formData.identifier.includes('@');
     const loginData = {
-      phoneNumber: formData.phoneNumber,
       password: formData.password,
     };
+
+    if (isEmail) {
+      loginData.email = formData.identifier;
+    } else {
+      loginData.phoneNumber = formData.identifier;
+    }
 
     // Use deliveryLogin from context
     try {
       const result = await deliveryLogin(loginData);
-      
+
       if (result.success) {
         toast.success('Login successful!');
         // Show warning as info if email is not verified (but don't block login)
@@ -54,7 +60,7 @@ const DeliveryLogin = () => {
           if (result.verificationType === 'phone') {
             navigate('/delivery/verify-otp', {
               state: {
-                phoneNumber: result.phoneNumber || formData.phoneNumber,
+                phoneNumber: result.phoneNumber || (isEmail ? '' : formData.identifier),
               },
             });
           }
@@ -81,14 +87,14 @@ const DeliveryLogin = () => {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="phoneNumber">📱 Phone Number</label>
+            <label htmlFor="identifier">📱 Phone Number or 📧 Email</label>
             <input
-              id="phoneNumber"
-              type="tel"
-              name="phoneNumber"
-              value={formData.phoneNumber}
+              id="identifier"
+              type="text"
+              name="identifier"
+              value={formData.identifier}
               onChange={handleChange}
-              placeholder="Enter your phone number"
+              placeholder="Enter phone number or email"
               required
             />
           </div>

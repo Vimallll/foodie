@@ -70,7 +70,8 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.setItem('token', token);
       setUser(user);
       setIsAuthenticated(true);
-      return { success: true };
+      setIsAuthenticated(true);
+      return { success: true, user };
     } catch (error) {
       return {
         success: false,
@@ -126,6 +127,18 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
+      const { token, user } = response.data;
+
+      if (!token) {
+        return {
+          success: false,
+          message: 'No token received from server',
+        };
+      }
+
+      sessionStorage.setItem('token', token);
+      setUser(user);
+      setIsAuthenticated(true);
       return { success: true };
     } catch (error) {
       console.error('Registration error:', error);
@@ -136,7 +149,17 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // If user is a delivery partner, set status to OFFLINE before logging out
+    if (user && user.role === 'delivery') {
+      try {
+        await api.patch('/delivery/status', { availabilityStatus: 'OFFLINE' });
+      } catch (error) {
+        console.error('Error setting status to OFFLINE during logout:', error);
+        // Continue with logout even if this fails
+      }
+    }
+
     sessionStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);

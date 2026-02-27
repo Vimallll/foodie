@@ -51,6 +51,15 @@ exports.emitOrderUpdate = (order, eventType = 'order-updated') => {
       });
     }
 
+    // Emit to delivery partners to remove order if it's assigned, cancelled, or delivered
+    if (order.deliveryPerson || ['OUT_FOR_DELIVERY', 'CANCELLED', 'DELIVERED'].includes(order.status)) {
+      io.to('delivery-partners').emit('order-removed', {
+        orderId: order._id,
+        status: order.status,
+        order: order, // Optional: send full order if needed for UI updates
+      });
+    }
+
     // Emit to admin/superAdmin
     io.to('admin').emit(eventType, {
       orderId: order._id,

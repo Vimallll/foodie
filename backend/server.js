@@ -89,8 +89,8 @@ io.on('connection', (socket) => {
     // User joins their personal room
     socket.join(`user-${userId}`);
 
-    // Restaurant admin joins restaurant room
-    if (role === 'restaurant_admin' && restaurantId) {
+    // Restaurant admin/manager joins restaurant room
+    if ((role === 'restaurant_admin' || role === 'manager') && restaurantId) {
       socket.join(`restaurant-${restaurantId}`);
     }
 

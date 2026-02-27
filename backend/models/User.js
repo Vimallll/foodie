@@ -92,12 +92,12 @@ const userSchema = new mongoose.Schema({
   },
   isAvailable: {
     type: Boolean,
-    default: true,
+    default: false, // Default to false for safety
   },
   status: {
     type: String,
     enum: ['AVAILABLE', 'BUSY', 'OFFLINE', 'ONLINE'],
-    default: 'ONLINE',
+    default: 'OFFLINE', // Default to OFFLINE
   },
   active: {
     type: Boolean,
@@ -184,7 +184,7 @@ const userSchema = new mongoose.Schema({
   availabilityStatus: {
     type: String,
     enum: ['OFFLINE', 'ONLINE', 'BUSY'],
-    default: 'ONLINE',
+    default: 'OFFLINE', // Default to OFFLINE
   },
   // OTP Verification Fields
   phoneOtp: {

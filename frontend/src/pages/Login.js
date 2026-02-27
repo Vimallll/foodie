@@ -28,8 +28,11 @@ const Login = () => {
 
     if (result.success) {
       toast.success('Login successful!');
-      if (result.user?.role === 'superAdmin' || result.user?.role === 'manager') {
+      // Redirect based on role
+      if (result.user?.role === 'superAdmin') {
         navigate('/admin/dashboard');
+      } else if (result.user?.role === 'manager') {
+        navigate('/restaurant-admin/dashboard');
       } else if (result.user?.role === 'homeChef') {
         navigate('/chef/dashboard');
       } else {

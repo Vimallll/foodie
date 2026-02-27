@@ -97,8 +97,9 @@ exports.register = async (req, res) => {
       profilePhoto: profilePhoto || '',
       isVerified: false,
       isActive: true,
-      availabilityStatus: 'ONLINE',
-      status: 'ONLINE',
+      availabilityStatus: 'OFFLINE', // Default to OFFLINE until verified
+      status: 'OFFLINE',             // Default to OFFLINE until verified
+      isAvailable: false,            // Default to unavailable until verified
       phoneOtp: otp,
       phoneOtpExpiry: otpExpiry,
       isPhoneVerified: false,
@@ -203,7 +204,7 @@ exports.verifyOTP = async (req, res) => {
     deliveryPartner.isPhoneVerified = true;
     deliveryPartner.phoneOtp = undefined;
     deliveryPartner.phoneOtpExpiry = undefined;
-    
+
     // If both phone and email are verified, mark as fully verified (admin still needs to approve)
     // Admin verification (isVerified) is separate and required for going online
     await deliveryPartner.save();
@@ -295,17 +296,16 @@ exports.login = async (req, res) => {
 
     // Email verification is optional - only warn if email exists but isn't verified
     // Don't block login, just inform the user they can verify email later
-    const emailVerificationWarning = deliveryPartner.email && !deliveryPartner.isEmailVerified
-      ? 'Note: Your email is not verified. You can verify it later from your profile.'
-      : null;
+    const emailVerificationWarning = null;
 
-    // Set delivery partner to ONLINE by default on login (if verified)
-    if (deliveryPartner.isVerified) {
-      deliveryPartner.availabilityStatus = 'ONLINE';
-      deliveryPartner.status = 'ONLINE';
-      deliveryPartner.isAvailable = true;
-      await deliveryPartner.save();
-    }
+    // Set delivery partner to OFFLINE by default on login
+    // User must manually go online
+    // if (deliveryPartner.isVerified) {
+    //   deliveryPartner.availabilityStatus = 'ONLINE';
+    //   deliveryPartner.status = 'ONLINE';
+    //   deliveryPartner.isAvailable = true;
+    //   await deliveryPartner.save();
+    // }
 
     // Generate token
     let token;
@@ -371,8 +371,8 @@ exports.getMe = async (req, res) => {
     }
 
     if (deliveryPartner.role !== 'delivery') {
-      console.error('GetMe: User role is not delivery', { 
-        userId, 
+      console.error('GetMe: User role is not delivery', {
+        userId,
         actualRole: deliveryPartner.role,
         expectedRole: 'delivery'
       });
@@ -475,13 +475,13 @@ exports.updateProfile = async (req, res) => {
 // @access  Private/Delivery
 exports.logout = async (req, res) => {
   try {
-    // Set availability status to OFFLINE
-    const deliveryPartner = await User.findById(req.user.id);
-    if (deliveryPartner) {
-      deliveryPartner.availabilityStatus = 'OFFLINE';
-      deliveryPartner.status = 'OFFLINE';
-      await deliveryPartner.save();
-    }
+    // Set availability status to OFFLINE - REMOVED per user request (persist status)
+    // const deliveryPartner = await User.findById(req.user.id);
+    // if (deliveryPartner) {
+    //   deliveryPartner.availabilityStatus = 'OFFLINE';
+    //   deliveryPartner.status = 'OFFLINE';
+    //   await deliveryPartner.save();
+    // }
 
     res.json({
       success: true,

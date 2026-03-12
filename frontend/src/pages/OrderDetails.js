@@ -82,7 +82,7 @@ const OrderDetails = () => {
                       <p>Quantity: {item.quantity}</p>
                     </div>
                     <div className="item-price">
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ₹{(item.price * item.quantity).toFixed(2)}
                     </div>
                   </div>
                 ))}
@@ -110,7 +110,7 @@ const OrderDetails = () => {
                 </div>
                 <div className="info-row">
                   <span>Subtotal:</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
+                  <span>₹{order.totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="info-row">
                   <span>Delivery:</span>
@@ -118,7 +118,7 @@ const OrderDetails = () => {
                 </div>
                 <div className="info-row total">
                   <span>Total:</span>
-                  <span>${order.totalAmount.toFixed(2)}</span>
+                  <span>₹{order.totalAmount.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -133,10 +133,10 @@ const OrderDetails = () => {
               </div>
 
               {order.deliveryPerson && (
-                <div className="delivery-person-info" style={{ 
-                  marginTop: '1.5rem', 
-                  paddingTop: '1.5rem', 
-                  borderTop: '1px solid #eee' 
+                <div className="delivery-person-info" style={{
+                  marginTop: '1.5rem',
+                  paddingTop: '1.5rem',
+                  borderTop: '1px solid #eee'
                 }}>
                   <h3>🚚 Delivery Partner</h3>
                   <div style={{ marginTop: '0.75rem' }}>
@@ -149,7 +149,7 @@ const OrderDetails = () => {
                     <div className="info-row" style={{ paddingTop: '0.5rem' }}>
                       <span style={{ fontWeight: '500', color: '#666' }}>Phone:</span>
                       <span style={{ fontWeight: '600', color: '#333' }}>
-                        <a 
+                        <a
                           href={`tel:${order.deliveryPerson.phone || order.deliveryPerson.phoneNumber}`}
                           style={{ color: '#ff6b35', textDecoration: 'none' }}
                         >

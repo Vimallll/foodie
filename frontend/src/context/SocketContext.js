@@ -71,11 +71,7 @@ export const SocketProvider = ({ children }) => {
             });
 
         } else {
-            // Disconnect if user logs out
-            if (socket) {
-                socket.disconnect();
-                setSocket(null);
-            }
+            setSocket(null);
         }
 
         return () => {

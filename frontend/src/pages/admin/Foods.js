@@ -263,7 +263,7 @@ const Foods = () => {
               {foods.map((food) => (
                 <tr key={food._id}>
                   <td>{food.name}</td>
-                  <td>${food.price}</td>
+                  <td>₹{food.price}</td>
                   <td>{food.category?.name || 'N/A'}</td>
                   <td>{food.restaurant?.name || 'N/A'}</td>
                   <td>{food.isAvailable ? 'Yes' : 'No'}</td>

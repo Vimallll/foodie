@@ -75,7 +75,7 @@ const RestaurantAdminDashboard = () => {
             </div>
             <div className="stat-card">
               <h3>Total Revenue</h3>
-              <div className="stat-value">${stats.totalRevenue.toFixed(2)}</div>
+              <div className="stat-value">₹{stats.totalRevenue.toFixed(2)}</div>
             </div>
           </div>
         )}

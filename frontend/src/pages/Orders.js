@@ -28,7 +28,7 @@ const Orders = () => {
   const handleCancelOrder = async (orderId, e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!window.confirm('Are you sure you want to cancel this order?')) {
       return;
     }
@@ -191,7 +191,7 @@ const Orders = () => {
                   </div>
                   <div
                     className="order-status-badge"
-                    style={{ 
+                    style={{
                       backgroundColor: getStatusColor(order.status),
                       color: 'white'
                     }}
@@ -230,7 +230,7 @@ const Orders = () => {
                   </div>
                   <div className="order-actions">
                     <div className="order-total">
-                      Total: <strong>${order.totalAmount?.toFixed(2) || '0.00'}</strong>
+                      Total: <strong>₹{order.totalAmount?.toFixed(2) || '0.00'}</strong>
                     </div>
                     {order.status?.toUpperCase() === 'PLACED' && (
                       <button

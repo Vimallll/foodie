@@ -195,7 +195,7 @@ const Checkout = () => {
               </div>
 
               <button type="submit" className="place-order-button" disabled={loading}>
-                {loading ? 'Placing Order...' : `Place Order - $${cart.total?.toFixed(2)}`}
+                {loading ? 'Placing Order...' : `Place Order - ₹${cart.total?.toFixed(2)}`}
               </button>
             </form>
           </div>
@@ -207,10 +207,10 @@ const Checkout = () => {
                 <div key={item._id} className="order-item">
                   <div className="item-info">
                     <h4>{item.food?.name}</h4>
-                    <p>Qty: {item.quantity} × ${item.price}</p>
+                    <p>Qty: {item.quantity} × ₹{item.price}</p>
                   </div>
                   <div className="item-total">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    ₹{(item.price * item.quantity).toFixed(2)}
                   </div>
                 </div>
               ))}
@@ -218,7 +218,7 @@ const Checkout = () => {
             <div className="order-total">
               <div className="total-row">
                 <span>Subtotal:</span>
-                <span>${cart.total?.toFixed(2)}</span>
+                <span>₹{cart.total?.toFixed(2)}</span>
               </div>
               <div className="total-row">
                 <span>Delivery:</span>
@@ -226,7 +226,7 @@ const Checkout = () => {
               </div>
               <div className="total-row final">
                 <span>Total:</span>
-                <span>${cart.total?.toFixed(2)}</span>
+                <span>₹{cart.total?.toFixed(2)}</span>
               </div>
             </div>
           </div>

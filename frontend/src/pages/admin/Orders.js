@@ -76,7 +76,7 @@ const Orders = () => {
                   <td>#{order._id.slice(-6).toUpperCase()}</td>
                   <td>{order.user?.name || order.user?.email || 'N/A'}</td>
                   <td>{order.items.length} item(s)</td>
-                  <td>${order.totalAmount.toFixed(2)}</td>
+                  <td>₹{order.totalAmount.toFixed(2)}</td>
                   <td>
                     <span
                       style={{

@@ -222,7 +222,7 @@ const RestaurantAdminFoods = () => {
                     )}
                   </td>
                   <td>{food.name}</td>
-                  <td>${food.price}</td>
+                  <td>₹{food.price}</td>
                   <td>{food.category?.name}</td>
                   <td>
                     <span className={food.isAvailable ? 'status-active' : 'status-inactive'}>
